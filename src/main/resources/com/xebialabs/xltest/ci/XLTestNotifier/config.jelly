@@ -1,0 +1,16 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+    <f:entry title="${%Credential}" field="credential" help="/plugin/xltest-plugin/help-credential.html">
+        <f:select/>
+    </f:entry>
+    <f:entry title="${%SuiteNames}" field="suiteNames" help="/plugin/xltest-plugin/help-suiteNames.html">
+        <f:textbox/>
+    </f:entry>
+    <f:entry title="${%FitnesseRootLocation}" field="fitnesseRootLocation" help="/plugin/xltest-plugin/help-fitnesseRootLocation.html">
+            <f:textbox/>
+    </f:entry>
+     <f:entry title="${%CallbackUri}" field="callbackUri" help="/plugin/xltest-plugin/help-callbackUri.html">
+                <f:textbox/>
+        </f:entry>
+
+</j:jelly>
