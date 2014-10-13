@@ -21,20 +21,44 @@
  * Floor, Boston, MA 02110-1301  USA
  */
 
-package com.xebialabs.xlrelease.ci;
+package com.xebialabs.xltest.ci.server;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import org.jvnet.hudson.test.JellyTestSuiteBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.File;
+/**
+ * This is a mock class! We need this because the combination of PowerMock and JenkinsRule is not possible.
+ */
+public class XLTestServerTestImpl implements XLTestServer {
 
-public class XLReleaseJellyTest extends TestCase{
+    private static final Logger LOGGER = LoggerFactory.getLogger(XLTestServerTestImpl.class);
 
+    private String user;
+    private String password;
+    private String proxyUrl;
+    private String serverUrl;
 
-    public static Test suite() throws Exception {
-        File file = new File("build");
-        System.out.print(file.getAbsolutePath());
-        return JellyTestSuiteBuilder.build(file, true);
+    XLTestServerTestImpl(String serverUrl, String proxyUrl, String username, String password) {
+        this.user=username;
+        this.password=password;
+        this.proxyUrl=proxyUrl;
+        this.serverUrl=serverUrl;
     }
+
+
+    @Override
+    public void newCommunicator() {
+
+    }
+
+    @Override
+    public Object getVersion() {
+        return serverUrl;
+    }
+
+    @Override
+    public void sendBackResults(String suiteNames, String replacedFitnesseRootLocation, String replacedCallbackUri) {
+
+    }
+
 }

@@ -81,6 +81,16 @@ public class XLTestNotifier extends Notifier {
         return BuildStepMonitor.BUILD;
     }
 
+    /**
+     * The post-build step is invoking this method...
+     *
+     * @param build
+     * @param launcher
+     * @param listener
+     * @return
+     * @throws InterruptedException
+     * @throws IOException
+     */
     @Override
     public boolean perform(final AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
         final JenkinsReleaseListener deploymentListener = new JenkinsReleaseListener(listener);
