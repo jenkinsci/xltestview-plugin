@@ -2,6 +2,10 @@ build
 *.iws
 *.ipr
 *.iml
+.classpath
+.project
+.settings
 target
 work
 .gradle
+/bin

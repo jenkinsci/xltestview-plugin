@@ -23,10 +23,7 @@
 
 package com.xebialabs.xltest.ci.server;
 
-import java.util.List;
-
-import com.xebialabs.xltest.ci.NameValuePair;
-import com.xebialabs.xltest.ci.util.ReleaseFullView;
+import java.net.MalformedURLException;
 
 public interface XLTestServer {
     void newCommunicator();
@@ -34,4 +31,6 @@ public interface XLTestServer {
     Object getVersion();
 
     void sendBackResults(String suiteNames, String replacedFitnesseRootLocation, String replacedCallbackUri);
+    
+    void sendBackResultsNewStyle(String tool, String directory, String pattern, String host, String jobName) throws MalformedURLException;
 }

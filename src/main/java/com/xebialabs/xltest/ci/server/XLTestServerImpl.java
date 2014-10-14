@@ -23,18 +23,25 @@
 
 package com.xebialabs.xltest.ci.server;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+
 import javax.ws.rs.core.MediaType;
 
 import com.xebialabs.xltest.fitnesse.FeedbackEventSender;
 import com.xebialabs.xltest.fitnesse.PageHistoryExtractor;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.Predicate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.GenericType;
@@ -43,7 +50,6 @@ import com.sun.jersey.api.client.config.ClientConfig;
 import com.sun.jersey.api.client.config.DefaultClientConfig;
 import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
 import com.sun.jersey.api.json.JSONConfiguration;
-
 import com.xebialabs.xltest.ci.NameValuePair;
 import com.xebialabs.xltest.ci.util.CreateReleaseView;
 import com.xebialabs.xltest.ci.util.ReleaseFullView;
@@ -103,4 +109,39 @@ public class XLTestServerImpl implements XLTestServer {
             e.printStackTrace();
         }
     }
+    
+    public void sendBackResultsNewStyle(String tool, String directory, String pattern, String host, String jobName) throws MalformedURLException {
+        URL feedbackUrl = new URL(serverUrl + "/import/" + jobName + "?tool=" + tool + "&pattern=" + pattern + "&directory=" + directory);
+    	HttpURLConnection connection = null;
+    	String summary = "En dit is de content";
+        try {
+            byte[] data = summary.toString().getBytes("UTF-8");
+            connection = (HttpURLConnection) feedbackUrl.openConnection();
+            connection.setDoOutput(true);
+            connection.setDoInput(true);
+            connection.setInstanceFollowRedirects(false);
+            connection.setUseCaches(false);
+
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Content-Type", "text/plain;charset=UTF-8"); // application/json;charset=UTF-8
+            connection.setRequestProperty("Content-Length", Integer.toString(data.length));
+            OutputStream out = connection.getOutputStream();
+            out.write(data);
+            out.flush();
+            out.close();
+
+            // Need this to trigger the sending of the request
+            int responseCode = connection.getResponseCode();
+
+            LOGGER.info("Sent event, response code: " + responseCode + ", " + summary);
+
+        } catch (IOException e) {
+            LOGGER.error("Could not deliver page information", e);
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
+    }
+
 }

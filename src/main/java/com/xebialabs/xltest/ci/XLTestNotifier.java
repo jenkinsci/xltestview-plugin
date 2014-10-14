@@ -23,55 +23,67 @@
 
 package com.xebialabs.xltest.ci;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.*;
-
-import com.xebialabs.xltest.ci.server.XLTestServer;
-import com.xebialabs.xltest.ci.server.XLTestServerFactory;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.StaplerRequest;
-import com.google.common.base.Strings;
-
-import com.xebialabs.xltest.ci.util.JenkinsReleaseListener;
-
-import hudson.EnvVars;
-import hudson.Extension;
-import hudson.Launcher;
-import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
-import hudson.model.BuildListener;
-import hudson.tasks.BuildStepDescriptor;
-import hudson.tasks.BuildStepMonitor;
-import hudson.tasks.Notifier;
-import hudson.tasks.Publisher;
-import hudson.util.FormValidation;
-import hudson.util.ListBoxModel;
-import net.sf.json.JSONObject;
-
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Maps.newHashMap;
 import static hudson.util.FormValidation.error;
 import static hudson.util.FormValidation.ok;
 import static hudson.util.FormValidation.warning;
+import hudson.Extension;
+import hudson.Launcher;
+import hudson.model.BuildListener;
+import hudson.model.AbstractBuild;
+import hudson.model.AbstractItem;
+import hudson.model.AbstractProject;
+import hudson.tasks.BuildStepDescriptor;
+import hudson.tasks.BuildStepMonitor;
+import hudson.tasks.Notifier;
+import hudson.tasks.Publisher;
+import hudson.util.FormValidation;
+import hudson.util.ListBoxModel;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.List;
+import java.util.Map;
+
+import jenkins.model.Jenkins;
+import net.sf.json.JSONObject;
+
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.StaplerRequest;
+
+import com.google.common.base.Strings;
+import com.xebialabs.xltest.ci.server.XLTestServer;
+import com.xebialabs.xltest.ci.server.XLTestServerFactory;
+import com.xebialabs.xltest.ci.util.JenkinsReleaseListener;
 
 public class XLTestNotifier extends Notifier {
 
+	// properties needed to create a TestSpecification at the XL Test server end
+	public final String tool;
+	public final String directory;
+	public final String pattern;
+	public final String xlTestUrl;
+	
+	// unknown to retain: 
     public final String credential;
 
+    // to remove: 
     public final String suiteNames;
-
     public final String fitnesseRootLocation;
-
     public final String callbackUri;
-
+    
 
     @DataBoundConstructor
-    public XLTestNotifier(String credential, String suiteNames, String fitnesseRootLocation, String callbackUri) {
-        this.credential = credential;
+    public XLTestNotifier(String tool, String directory, String pattern, String xlTestUrl, String credential, String suiteNames, String fitnesseRootLocation, String callbackUri) {
+    	this.tool = tool;
+    	this.directory = directory;
+    	this.pattern = pattern;
+    	this.xlTestUrl = xlTestUrl;
+    	this.credential = credential;
         this.suiteNames = suiteNames;
         this.fitnesseRootLocation = fitnesseRootLocation;
         this.callbackUri = callbackUri;
@@ -95,14 +107,30 @@ public class XLTestNotifier extends Notifier {
     public boolean perform(final AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
         final JenkinsReleaseListener deploymentListener = new JenkinsReleaseListener(listener);
 
-        final EnvVars envVars = build.getEnvironment(listener);
-        String replacedSuiteNames = envVars.expand(this.suiteNames);
+        
+        // OLD
+//        final EnvVars envVars = build.getEnvironment(listener);
+//        String replacedSuiteNames = envVars.expand(this.suiteNames);
+//
+//        String replacedFitnesseRootLocation = envVars.expand(this.fitnesseRootLocation);
+//        String replacedCallbackUri = envVars.expand(this.callbackUri);
+//
+//        sendBackResults(replacedSuiteNames, replacedFitnesseRootLocation, replacedCallbackUri, deploymentListener);
 
-        String replacedFitnesseRootLocation = envVars.expand(this.fitnesseRootLocation);
-        String replacedCallbackUri = envVars.expand(this.callbackUri);
-
-        sendBackResults(replacedSuiteNames, replacedFitnesseRootLocation, replacedCallbackUri, deploymentListener);
-
+        // NEW
+        String jobName = ((AbstractItem)build.getProject()).getName();
+        // perhaps we need the build number later??? Use e.g. build.getUrl(); which returns something like job/foo/32
+        // now get the host we run on
+        String rootUrlAsString = Jenkins.getInstance().getRootUrl(); // gives http://localhost/jenkins or whatever was specified
+        String host = null;
+        try {
+        	URL url = new URL(rootUrlAsString);
+        	host = url.getHost();
+        } catch (Exception e) {
+        	// ignore for nw
+        }
+        getXLTestServer().sendBackResultsNewStyle(tool, directory, pattern, host, jobName);
+        
         return true;
     }
 
@@ -195,10 +223,6 @@ public class XLTestNotifier extends Notifier {
         public FormValidation doCheckXLTestClientProxyUrl(@QueryParameter String xlTestClientProxyUrl) {
             return validateOptionalUrl(xlTestClientProxyUrl);
         }
-
-
-
-
 
         public List<Credential> getCredentials() {
             return credentials;
