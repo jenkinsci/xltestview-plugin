@@ -23,14 +23,14 @@
 
 package com.xebialabs.xltest.ci.server;
 
+import hudson.FilePath;
+
 import java.net.MalformedURLException;
 
 public interface XLTestServer {
     void newCommunicator();
 
     Object getVersion();
-
-    void sendBackResults(String suiteNames, String replacedFitnesseRootLocation, String replacedCallbackUri);
     
-    void sendBackResultsNewStyle(String tool, String directory, String pattern, String host, String jobName) throws MalformedURLException;
+    void sendBackResults(String tool, String directory, String pattern, String jobName, FilePath workspace) throws MalformedURLException;
 }

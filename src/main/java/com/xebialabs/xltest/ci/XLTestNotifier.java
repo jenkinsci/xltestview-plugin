@@ -30,6 +30,7 @@ import static hudson.util.FormValidation.error;
 import static hudson.util.FormValidation.ok;
 import static hudson.util.FormValidation.warning;
 import hudson.Extension;
+import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.BuildListener;
 import hudson.model.AbstractBuild;
@@ -39,10 +40,13 @@ import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Notifier;
 import hudson.tasks.Publisher;
+import hudson.util.DirScanner;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
+import hudson.util.io.ArchiverFactory;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
@@ -58,7 +62,6 @@ import org.kohsuke.stapler.StaplerRequest;
 import com.google.common.base.Strings;
 import com.xebialabs.xltest.ci.server.XLTestServer;
 import com.xebialabs.xltest.ci.server.XLTestServerFactory;
-import com.xebialabs.xltest.ci.util.JenkinsReleaseListener;
 
 public class XLTestNotifier extends Notifier {
 
@@ -66,27 +69,18 @@ public class XLTestNotifier extends Notifier {
 	public final String tool;
 	public final String directory;
 	public final String pattern;
-	public final String xlTestUrl;
 	
-	// unknown to retain: 
     public final String credential;
 
-    // to remove: 
-    public final String suiteNames;
-    public final String fitnesseRootLocation;
-    public final String callbackUri;
+
     
 
     @DataBoundConstructor
-    public XLTestNotifier(String tool, String directory, String pattern, String xlTestUrl, String credential, String suiteNames, String fitnesseRootLocation, String callbackUri) {
+    public XLTestNotifier(String tool, String directory, String pattern, String credential) {
     	this.tool = tool;
     	this.directory = directory;
     	this.pattern = pattern;
-    	this.xlTestUrl = xlTestUrl;
     	this.credential = credential;
-        this.suiteNames = suiteNames;
-        this.fitnesseRootLocation = fitnesseRootLocation;
-        this.callbackUri = callbackUri;
     }
 
     public BuildStepMonitor getRequiredMonitorService() {
@@ -105,40 +99,16 @@ public class XLTestNotifier extends Notifier {
      */
     @Override
     public boolean perform(final AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
-        final JenkinsReleaseListener deploymentListener = new JenkinsReleaseListener(listener);
 
-        
-        // OLD
-//        final EnvVars envVars = build.getEnvironment(listener);
-//        String replacedSuiteNames = envVars.expand(this.suiteNames);
-//
-//        String replacedFitnesseRootLocation = envVars.expand(this.fitnesseRootLocation);
-//        String replacedCallbackUri = envVars.expand(this.callbackUri);
-//
-//        sendBackResults(replacedSuiteNames, replacedFitnesseRootLocation, replacedCallbackUri, deploymentListener);
-
-        // NEW
         String jobName = ((AbstractItem)build.getProject()).getName();
         // perhaps we need the build number later??? Use e.g. build.getUrl(); which returns something like job/foo/32
-        // now get the host we run on
-        String rootUrlAsString = Jenkins.getInstance().getRootUrl(); // gives http://localhost/jenkins or whatever was specified
-        String host = null;
-        try {
-        	URL url = new URL(rootUrlAsString);
-        	host = url.getHost();
-        } catch (Exception e) {
-        	// ignore for nw
-        }
-        getXLTestServer().sendBackResultsNewStyle(tool, directory, pattern, host, jobName);
+        // String rootUrlAsString = Jenkins.getInstance().getRootUrl(); // gives http://localhost/jenkins or whatever was specified
+
+        FilePath workspace = build.getWorkspace();
+
+        getXLTestServer().sendBackResults(tool, directory, pattern, jobName, workspace);
         
         return true;
-    }
-
-    private void sendBackResults(final String replacedSuiteNames, final String replacedFitnesseRootLocation, final String replacedCallbackUri, final JenkinsReleaseListener deploymentListener) {
-        deploymentListener.info(Messages.XLTestNotifier_sendBackResults(suiteNames));
-
-        // send back results to XL Test
-        getXLTestServer().sendBackResults(replacedSuiteNames, replacedFitnesseRootLocation, replacedCallbackUri);
     }
 
     private XLTestServer getXLTestServer() {

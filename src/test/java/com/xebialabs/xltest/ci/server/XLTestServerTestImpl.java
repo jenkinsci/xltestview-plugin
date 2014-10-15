@@ -23,6 +23,8 @@
 
 package com.xebialabs.xltest.ci.server;
 
+import hudson.FilePath;
+
 import java.net.MalformedURLException;
 
 import org.slf4j.Logger;
@@ -58,14 +60,8 @@ public class XLTestServerTestImpl implements XLTestServer {
         return serverUrl;
     }
 
-    @Override
-    public void sendBackResults(String suiteNames, String replacedFitnesseRootLocation, String replacedCallbackUri) {
-
-    }
-
-
 	@Override
-	public void sendBackResultsNewStyle(String tool, String directory, String pattern, String host, String jobName) throws MalformedURLException {
+	public void sendBackResults(String tool, String directory, String pattern, String jobName, FilePath workspace) throws MalformedURLException {
 		// TODO Auto-generated method stub
 		
 	}

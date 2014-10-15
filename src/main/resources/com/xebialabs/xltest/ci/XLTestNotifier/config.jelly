@@ -13,17 +13,5 @@
     <f:entry title="${%Pattern}" field="pattern" help="/plugin/xltest-plugin/help-pattern.html">
     	<f:textbox default="**/TEST-*.xml"/>
     </f:entry>
-    <f:entry title="${%XLTestUrl}" field="xlTestUrl" help="/plugin/xltest-plugin/help-xlTestUrl.html">
-    	<f:textbox default="http://localhost:6516"/>
-    </f:entry>
-    <f:entry title="${%SuiteNames}" field="suiteNames" help="/plugin/xltest-plugin/help-suiteNames.html">
-		<f:textbox/>
-    </f:entry>
-    <f:entry title="${%FitnesseRootLocation}" field="fitnesseRootLocation" help="/plugin/xltest-plugin/help-fitnesseRootLocation.html">
-		<f:textbox/>
-    </f:entry>
-    <f:entry title="${%CallbackUri}" field="callbackUri" help="/plugin/xltest-plugin/help-callbackUri.html">
-    	<f:textbox/>
-    </f:entry>
 
 </j:jelly>

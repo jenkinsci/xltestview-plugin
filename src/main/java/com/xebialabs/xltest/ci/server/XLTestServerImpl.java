@@ -23,37 +23,37 @@
 
 package com.xebialabs.xltest.ci.server;
 
+import hudson.FilePath;
+import hudson.util.DirScanner;
+import hudson.util.DirScanner.Glob;
+import hudson.util.FileVisitor;
+import hudson.util.io.ArchiverFactory;
+
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Level;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MediaType;
 
-import com.xebialabs.xltest.fitnesse.FeedbackEventSender;
-import com.xebialabs.xltest.fitnesse.PageHistoryExtractor;
-
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.Predicate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.GenericType;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.config.ClientConfig;
 import com.sun.jersey.api.client.config.DefaultClientConfig;
 import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
-import com.sun.jersey.api.json.JSONConfiguration;
-import com.xebialabs.xltest.ci.NameValuePair;
-import com.xebialabs.xltest.ci.util.CreateReleaseView;
-import com.xebialabs.xltest.ci.util.ReleaseFullView;
-import com.xebialabs.xltest.ci.util.TemplateVariable;
 
 public class XLTestServerImpl implements XLTestServer {
 
@@ -90,32 +90,22 @@ public class XLTestServerImpl implements XLTestServer {
     public Object getVersion() {
         return serverUrl;
     }
-
-    @Override
-    public void sendBackResults(final String suiteNames, final String replacedFitnesseRootLocation, final String replacedCallbackUri) {
-        String suiteName = suiteNames;
-
-        LOGGER.info("Starting Page history extractor...");
-        LOGGER.info("Suite: " + suiteName);
-        LOGGER.info("Sending events to " + replacedCallbackUri);
-
-        try {
-            PageHistoryExtractor extractor = new PageHistoryExtractor(new FeedbackEventSender(new URL(replacedCallbackUri)));
-            extractor.tellMeAboutSuite(suiteName, replacedFitnesseRootLocation);
-        } catch (MalformedURLException e) {
-            LOGGER.error("Invalid URL: " + serverUrl);
-        } catch (Exception e) {
-            LOGGER.error("Could not extract page history: " + e);
-            e.printStackTrace();
-        }
-    }
     
-    public void sendBackResultsNewStyle(String tool, String directory, String pattern, String host, String jobName) throws MalformedURLException {
-        URL feedbackUrl = new URL(serverUrl + "/import/" + jobName + "?tool=" + tool + "&pattern=" + pattern + "&directory=" + directory);
-    	HttpURLConnection connection = null;
-    	String summary = "En dit is de content";
+    public void sendBackResults(String tool, String directory, String pattern, String jobName, FilePath workspace) throws MalformedURLException {
+    	
+    	URL feedbackUrl = new URL(serverUrl + "/import/" + jobName + "?tool=" + tool + "&pattern=" + pattern + "&directory=" + directory);
+		
+    	FilePath workspacePartToSent = workspace;
+    	if (directory != null && !"".equals(directory)) {
+    		System.out.println("changing the workspace to a subdir of the workspace");
+    		LOGGER.info("logger: changing the workspace to a subdir of the workspace");
+    		workspacePartToSent = new FilePath(workspace, directory);
+    	}
+        HttpURLConnection connection = null;
         try {
-            byte[] data = summary.toString().getBytes("UTF-8");
+        	LOGGER.info("logger: Trying to sent workspace: " + workspacePartToSent.toURI().toString() + " to XL Test on URL: " + feedbackUrl.toString());
+        	System.out.println("Trying to sent workspace: " + workspacePartToSent.toURI().toString() + " to XL Test on URL: " + feedbackUrl.toString());
+            //byte[] data = summary.toString().getBytes("UTF-8");
             connection = (HttpURLConnection) feedbackUrl.openConnection();
             connection.setDoOutput(true);
             connection.setDoInput(true);
@@ -123,25 +113,89 @@ public class XLTestServerImpl implements XLTestServer {
             connection.setUseCaches(false);
 
             connection.setRequestMethod("POST");
-            connection.setRequestProperty("Content-Type", "text/plain;charset=UTF-8"); // application/json;charset=UTF-8
-            connection.setRequestProperty("Content-Length", Integer.toString(data.length));
-            OutputStream out = connection.getOutputStream();
-            out.write(data);
-            out.flush();
-            out.close();
+            connection.setRequestProperty("Content-Type", "application/zip");
+            //connection.setRequestProperty("Content-Length", Integer.toString(data.length));
+            ArchiverFactory factory = ArchiverFactory.ZIP;
+            DirScanner scanner = new Glob(pattern, null);
+            File dirToScan = new File(workspacePartToSent.getRemote());
+            System.out.println("Going to scan dir: " + dirToScan + " for files to zip using pattern: " + pattern);
+            LOGGER.info("logger: Going to scan dir: " + dirToScan + " for files to zip using pattern: " + pattern);
+
+			
+			
+			
+			
+			scanner.scan(dirToScan, new FileVisitor() {
+                @Override public void visit(File f, String relativePath) throws IOException {
+                	System.out.println("scanner looked at file: " + f.getAbsolutePath());
+                	LOGGER.info("logger:scanner looked at file: " + f.getAbsolutePath());
+                }
+            });
+            
+            
+            OutputStream os = connection.getOutputStream();
+            int numberOfFilesArchived = workspacePartToSent.archive(factory, os, scanner);
+            
+            os.flush();
+            os.close();
 
             // Need this to trigger the sending of the request
             int responseCode = connection.getResponseCode();
 
-            LOGGER.info("Sent event, response code: " + responseCode + ", " + summary);
+            LOGGER.info("Zip sent containing: " + numberOfFilesArchived +" files. Response code from XL Test was: " + responseCode);
+            System.out.println("Zip sent containing: " + numberOfFilesArchived +" files. Response code from XL Test was: " + responseCode);
 
+            
         } catch (IOException e) {
             LOGGER.error("Could not deliver page information", e);
-        } finally {
+        } catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} finally {
             if (connection != null) {
                 connection.disconnect();
             }
         }
     }
+    
+    public void sendFile(HttpServletResponse response, String fileName)  
+    {  
+       response.setContentType("application/zip");  
+       response.setContentLength(2048);  
+       response.setHeader("Content-Disposition","attachment;filename=\"" + fileName + "\"");  
+       try  
+       {  
+  
+          ByteArrayOutputStream baos = new ByteArrayOutputStream();  
+          ZipOutputStream zos = new ZipOutputStream(baos);  
+          byte bytes[] = new byte[2048];  
+  
+          FileInputStream fis = new FileInputStream(fileName);  
+          BufferedInputStream bis = new BufferedInputStream(fis);  
+          zos.putNextEntry(new ZipEntry(fileName));  
+          int bytesRead;  
+          while ((bytesRead = bis.read(bytes)) != -1)  
+          {  
+            zos.write(bytes, 0, bytesRead);  
+          }  
+  
+           zos.closeEntry();  
+           bis.close();  
+           fis.close();  
+  
+           zos.flush();  
+           baos.flush();  
+           zos.close();  
+           baos.close();  
+  
+           ServletOutputStream op = response.getOutputStream();  
+           op.write(baos.toByteArray());  
+           op.flush();  
+             
+       }catch(IOException ioe)  
+       {  
+           ioe.printStackTrace();  
+       }  
+    } 
 
 }
