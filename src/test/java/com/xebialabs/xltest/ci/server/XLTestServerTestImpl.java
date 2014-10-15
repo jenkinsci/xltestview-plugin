@@ -61,7 +61,7 @@ public class XLTestServerTestImpl implements XLTestServer {
     }
 
 	@Override
-	public void sendBackResults(String tool, String directory, String pattern, String jobName, FilePath workspace) throws MalformedURLException {
+	public void sendBackResults(String tool, String pattern, String jobName, FilePath workspace) throws MalformedURLException {
 		// TODO Auto-generated method stub
 		
 	}

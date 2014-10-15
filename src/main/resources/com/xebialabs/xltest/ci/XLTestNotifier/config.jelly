@@ -7,11 +7,8 @@
     <f:entry title="${%Tool}" field="tool" help="/plugin/xltest-plugin/help-tool.html">
 		<f:textbox default="one of FitNesse, Cucumber, xUnit, JMeter, ..."/>
     </f:entry>
-    <f:entry title="${%Directory}" field="directory" help="/plugin/xltest-plugin/help-directory.html">
-		<f:textbox/>
-    </f:entry>
     <f:entry title="${%Pattern}" field="pattern" help="/plugin/xltest-plugin/help-pattern.html">
-    	<f:textbox default="**/TEST-*.xml"/>
+    	<f:textbox default="**/*TEST-*.xml"/>
     </f:entry>
 
 </j:jelly>

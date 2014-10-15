@@ -40,19 +40,15 @@ import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Notifier;
 import hudson.tasks.Publisher;
-import hudson.util.DirScanner;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
-import hudson.util.io.ArchiverFactory;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
 
-import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -67,7 +63,6 @@ public class XLTestNotifier extends Notifier {
 
 	// properties needed to create a TestSpecification at the XL Test server end
 	public final String tool;
-	public final String directory;
 	public final String pattern;
 	
     public final String credential;
@@ -76,9 +71,8 @@ public class XLTestNotifier extends Notifier {
     
 
     @DataBoundConstructor
-    public XLTestNotifier(String tool, String directory, String pattern, String credential) {
+    public XLTestNotifier(String tool, String pattern, String credential) {
     	this.tool = tool;
-    	this.directory = directory;
     	this.pattern = pattern;
     	this.credential = credential;
     }
@@ -106,7 +100,7 @@ public class XLTestNotifier extends Notifier {
 
         FilePath workspace = build.getWorkspace();
 
-        getXLTestServer().sendBackResults(tool, directory, pattern, jobName, workspace);
+        getXLTestServer().sendBackResults(tool, pattern, jobName, workspace);
         
         return true;
     }

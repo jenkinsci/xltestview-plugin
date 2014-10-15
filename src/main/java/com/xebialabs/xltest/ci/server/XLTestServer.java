@@ -32,5 +32,5 @@ public interface XLTestServer {
 
     Object getVersion();
     
-    void sendBackResults(String tool, String directory, String pattern, String jobName, FilePath workspace) throws MalformedURLException;
+    void sendBackResults(String tool, String pattern, String jobName, FilePath workspace) throws MalformedURLException;
 }

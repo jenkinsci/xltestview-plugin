@@ -91,21 +91,13 @@ public class XLTestServerImpl implements XLTestServer {
         return serverUrl;
     }
     
-    public void sendBackResults(String tool, String directory, String pattern, String jobName, FilePath workspace) throws MalformedURLException {
+    public void sendBackResults(String tool, String pattern, String jobName, FilePath workspace) throws MalformedURLException {
     	
-    	URL feedbackUrl = new URL(serverUrl + "/import/" + jobName + "?tool=" + tool + "&pattern=" + pattern + "&directory=" + directory);
-		
-    	FilePath workspacePartToSent = workspace;
-    	if (directory != null && !"".equals(directory)) {
-    		System.out.println("changing the workspace to a subdir of the workspace");
-    		LOGGER.info("logger: changing the workspace to a subdir of the workspace");
-    		workspacePartToSent = new FilePath(workspace, directory);
-    	}
+    	URL feedbackUrl = new URL(serverUrl + "/import/" + jobName + "?tool=" + tool + "&pattern=" + pattern);
+
         HttpURLConnection connection = null;
         try {
-        	LOGGER.info("logger: Trying to sent workspace: " + workspacePartToSent.toURI().toString() + " to XL Test on URL: " + feedbackUrl.toString());
-        	System.out.println("Trying to sent workspace: " + workspacePartToSent.toURI().toString() + " to XL Test on URL: " + feedbackUrl.toString());
-            //byte[] data = summary.toString().getBytes("UTF-8");
+        	LOGGER.info("logger: Trying to sent workspace: " + workspace.toURI().toString() + " to XL Test on URL: " + feedbackUrl.toString());
             connection = (HttpURLConnection) feedbackUrl.openConnection();
             connection.setDoOutput(true);
             connection.setDoInput(true);
@@ -114,27 +106,12 @@ public class XLTestServerImpl implements XLTestServer {
 
             connection.setRequestMethod("POST");
             connection.setRequestProperty("Content-Type", "application/zip");
-            //connection.setRequestProperty("Content-Length", Integer.toString(data.length));
             ArchiverFactory factory = ArchiverFactory.ZIP;
-            DirScanner scanner = new Glob(pattern, null);
-            File dirToScan = new File(workspacePartToSent.getRemote());
-            System.out.println("Going to scan dir: " + dirToScan + " for files to zip using pattern: " + pattern);
-            LOGGER.info("logger: Going to scan dir: " + dirToScan + " for files to zip using pattern: " + pattern);
-
-			
-			
-			
-			
-			scanner.scan(dirToScan, new FileVisitor() {
-                @Override public void visit(File f, String relativePath) throws IOException {
-                	System.out.println("scanner looked at file: " + f.getAbsolutePath());
-                	LOGGER.info("logger:scanner looked at file: " + f.getAbsolutePath());
-                }
-            });
-            
+            DirScanner scanner = new Glob(pattern, null); // no excludes supported (yet)
+            LOGGER.info("logger: Going to scan dir: " + workspace.getRemote() + " for files to zip using pattern: " + pattern);
             
             OutputStream os = connection.getOutputStream();
-            int numberOfFilesArchived = workspacePartToSent.archive(factory, os, scanner);
+            int numberOfFilesArchived = workspace.archive(factory, os, scanner);
             
             os.flush();
             os.close();
@@ -143,9 +120,7 @@ public class XLTestServerImpl implements XLTestServer {
             int responseCode = connection.getResponseCode();
 
             LOGGER.info("Zip sent containing: " + numberOfFilesArchived +" files. Response code from XL Test was: " + responseCode);
-            System.out.println("Zip sent containing: " + numberOfFilesArchived +" files. Response code from XL Test was: " + responseCode);
-
-            
+                        
         } catch (IOException e) {
             LOGGER.error("Could not deliver page information", e);
         } catch (InterruptedException e) {
@@ -157,45 +132,5 @@ public class XLTestServerImpl implements XLTestServer {
             }
         }
     }
-    
-    public void sendFile(HttpServletResponse response, String fileName)  
-    {  
-       response.setContentType("application/zip");  
-       response.setContentLength(2048);  
-       response.setHeader("Content-Disposition","attachment;filename=\"" + fileName + "\"");  
-       try  
-       {  
-  
-          ByteArrayOutputStream baos = new ByteArrayOutputStream();  
-          ZipOutputStream zos = new ZipOutputStream(baos);  
-          byte bytes[] = new byte[2048];  
-  
-          FileInputStream fis = new FileInputStream(fileName);  
-          BufferedInputStream bis = new BufferedInputStream(fis);  
-          zos.putNextEntry(new ZipEntry(fileName));  
-          int bytesRead;  
-          while ((bytesRead = bis.read(bytes)) != -1)  
-          {  
-            zos.write(bytes, 0, bytesRead);  
-          }  
-  
-           zos.closeEntry();  
-           bis.close();  
-           fis.close();  
-  
-           zos.flush();  
-           baos.flush();  
-           zos.close();  
-           baos.close();  
-  
-           ServletOutputStream op = response.getOutputStream();  
-           op.write(baos.toByteArray());  
-           op.flush();  
-             
-       }catch(IOException ioe)  
-       {  
-           ioe.printStackTrace();  
-       }  
-    } 
 
 }
