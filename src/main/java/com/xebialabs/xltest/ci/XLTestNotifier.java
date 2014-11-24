@@ -36,6 +36,7 @@ import hudson.model.BuildListener;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractItem;
 import hudson.model.AbstractProject;
+import hudson.model.Hudson;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Notifier;
@@ -99,7 +100,7 @@ public class XLTestNotifier extends Notifier {
         // String rootUrlAsString = Jenkins.getInstance().getRootUrl(); // gives http://localhost/jenkins or whatever was specified
 
         FilePath workspace = build.getWorkspace();
-
+        
         getXLTestServer().sendBackResults(tool, pattern, jobName, workspace);
         
         return true;
@@ -120,8 +121,10 @@ public class XLTestNotifier extends Notifier {
         // ************ SERIALIZED GLOBAL PROPERTIES *********** //
 
         private String xlTestServerUrl;
-
         private String xlTestClientProxyUrl;
+        
+        private String jenkinsHost;
+        private int jenkinsPort;
 
         private List<Credential> credentials = newArrayList();
 
@@ -138,9 +141,11 @@ public class XLTestNotifier extends Notifier {
             for (Credential credential : credentials) {
                 String serverUrl = credential.resolveServerUrl(xlTestServerUrl);
                 String proxyUrl = credential.resolveProxyUrl(xlTestClientProxyUrl);
+                String jenkinsHost = credential.getJenkinsHost();
+                int jenkinsPort = credential.getJenkinsPort();
 
                 credentialServerMap.put(credential.name,
-                        XLTestServerFactory.newInstance(serverUrl, proxyUrl, credential.username, credential.password != null ? credential.password.getPlainText() : ""));
+                        XLTestServerFactory.newInstance(serverUrl, proxyUrl, credential.username, credential.password != null ? credential.password.getPlainText() : "", jenkinsHost, jenkinsPort));
             }
         }
 

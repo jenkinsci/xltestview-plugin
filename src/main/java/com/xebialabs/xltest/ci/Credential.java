@@ -55,20 +55,32 @@ public class Credential extends AbstractDescribableImpl<Credential> {
     public final String username;
     public final Secret password;
     private final SecondaryServerInfo secondaryServerInfo;
+    public final String jenkinsHost;
+    public final int jenkinsPort;
 
     @DataBoundConstructor
-    public Credential(String name, String username, Secret password, SecondaryServerInfo secondaryServerInfo) {
+    public Credential(String name, String username, Secret password, SecondaryServerInfo secondaryServerInfo, String jenkinsHost, int jenkinsPort) {
         this.name = name;
         this.username = username;
         this.password = password;
         this.secondaryServerInfo = secondaryServerInfo;
+        this.jenkinsHost = jenkinsHost;
+        this.jenkinsPort = jenkinsPort;
     }
 
     public String getName() {
         return name;
     }
 
-    public  String getSecondaryServerUrl() {
+    public String getJenkinsHost() {
+		return jenkinsHost;
+	}
+
+	public int getJenkinsPort() {
+		return jenkinsPort;
+	}
+
+	public  String getSecondaryServerUrl() {
         if (secondaryServerInfo != null) {
             return secondaryServerInfo.secondaryServerUrl;
         }
@@ -209,12 +221,13 @@ public class Credential extends AbstractDescribableImpl<Credential> {
 
 
         public FormValidation doValidate(@QueryParameter String xlTestServerUrl, @QueryParameter String xlTestClientProxyUrl, @QueryParameter String username,
-                                         @QueryParameter Secret password, @QueryParameter String secondaryServerUrl, @QueryParameter String secondaryProxyUrl) throws IOException {
+                                         @QueryParameter Secret password, @QueryParameter String secondaryServerUrl, @QueryParameter String secondaryProxyUrl, 
+                                         @QueryParameter String jenkinsHost, @QueryParameter int jenkinsPort) throws IOException {
             try {
                 String serverUrl = Strings.isNullOrEmpty(secondaryServerUrl) ? xlTestServerUrl : secondaryServerUrl;
                 String proxyUrl = Strings.isNullOrEmpty(secondaryProxyUrl) ? xlTestClientProxyUrl : secondaryProxyUrl;
 
-                XLTestServer xlTestServer = XLTestServerFactory.newInstance(serverUrl, proxyUrl, username, password.getPlainText());
+                XLTestServer xlTestServer = XLTestServerFactory.newInstance(serverUrl, proxyUrl, username, password.getPlainText(), jenkinsHost, jenkinsPort);
                 xlTestServer.newCommunicator(); // throws IllegalStateException if creds invalid
                 return FormValidation.ok("Your XL Test instance [%s] is alive, and your credentials are valid!", xlTestServer.getVersion());
             } catch(IllegalStateException e) {

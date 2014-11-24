@@ -63,12 +63,17 @@ public class XLTestServerImpl implements XLTestServer {
     private String password;
     private String proxyUrl;
     private String serverUrl;
+    private String jenkinsHost;
+    private int jenkinsPort;
+    
 
-    XLTestServerImpl(String serverUrl, String proxyUrl, String username, String password) {
+    XLTestServerImpl(String serverUrl, String proxyUrl, String username, String password, String jenkinsHost, int jenkinsPort) {
         this.user=username;
         this.password=password;
         this.proxyUrl=proxyUrl;
         this.serverUrl=serverUrl;
+        this.jenkinsHost=jenkinsHost;
+        this.jenkinsPort=jenkinsPort;
     }
 
 
@@ -93,7 +98,7 @@ public class XLTestServerImpl implements XLTestServer {
     
     public void sendBackResults(String tool, String pattern, String jobName, FilePath workspace) throws MalformedURLException {
     	
-    	URL feedbackUrl = new URL(serverUrl + "/import/" + jobName + "?tool=" + tool + "&pattern=" + pattern);
+    	URL feedbackUrl = new URL(serverUrl + "/import/" + jobName + "?tool=" + tool + "&pattern=" + pattern + "&jenkinsHost=" + jenkinsHost + "&jenkinsPort=" + jenkinsPort);
 
         HttpURLConnection connection = null;
         try {
