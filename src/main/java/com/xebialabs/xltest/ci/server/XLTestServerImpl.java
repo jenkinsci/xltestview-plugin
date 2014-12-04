@@ -23,26 +23,15 @@
 
 package com.xebialabs.xltest.ci.server;
 
+import com.sun.jersey.core.util.Base64;
 import hudson.FilePath;
 import hudson.util.DirScanner;
 import hudson.util.DirScanner.Glob;
-import hudson.util.FileVisitor;
 import hudson.util.io.ArchiverFactory;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
-
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletResponse;
+import java.net.*;
 import javax.ws.rs.core.MediaType;
 
 import org.slf4j.Logger;
@@ -97,7 +86,6 @@ public class XLTestServerImpl implements XLTestServer {
     }
     
     public void sendBackResults(String tool, String pattern, String jobName, FilePath workspace) throws MalformedURLException {
-    	
     	URL feedbackUrl = new URL(serverUrl + "/import/" + jobName + "?tool=" + tool + "&pattern=" + pattern + "&jenkinsHost=" + jenkinsHost + "&jenkinsPort=" + jenkinsPort);
 
         HttpURLConnection connection = null;
@@ -108,6 +96,9 @@ public class XLTestServerImpl implements XLTestServer {
             connection.setDoInput(true);
             connection.setInstanceFollowRedirects(false);
             connection.setUseCaches(false);
+            String authorization = "Basic " + new String(Base64.encode((user + ":" + password).getBytes()));
+            LOGGER.info("Authorization token: " + authorization);
+            connection.setRequestProperty("Authorization", authorization);
 
             connection.setRequestMethod("POST");
             connection.setRequestProperty("Content-Type", "application/zip");
