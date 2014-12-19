@@ -100,8 +100,9 @@ public class XLTestNotifier extends Notifier {
         // String rootUrlAsString = Jenkins.getInstance().getRootUrl(); // gives http://localhost/jenkins or whatever was specified
 
         FilePath workspace = build.getWorkspace();
+        String slave = build.getBuiltOn().getDisplayName();
         
-        getXLTestServer().sendBackResults(tool, pattern, jobName, workspace);
+        getXLTestServer().sendBackResults(tool, pattern, jobName, workspace, slave);
         
         return true;
     }

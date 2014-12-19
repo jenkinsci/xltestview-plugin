@@ -23,15 +23,20 @@
 
 package com.xebialabs.xltest.ci.server;
 
-import com.sun.jersey.core.util.Base64;
 import hudson.FilePath;
 import hudson.util.DirScanner;
 import hudson.util.DirScanner.Glob;
 import hudson.util.io.ArchiverFactory;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.*;
+import java.io.PrintWriter;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+
 import javax.ws.rs.core.MediaType;
 
 import org.slf4j.Logger;
@@ -43,6 +48,7 @@ import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.config.ClientConfig;
 import com.sun.jersey.api.client.config.DefaultClientConfig;
 import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+import com.sun.jersey.core.util.Base64;
 
 public class XLTestServerImpl implements XLTestServer {
 
@@ -85,9 +91,8 @@ public class XLTestServerImpl implements XLTestServer {
         return serverUrl;
     }
     
-    public void sendBackResults(String tool, String pattern, String jobName, FilePath workspace) throws MalformedURLException {
-    	URL feedbackUrl = new URL(serverUrl + "/import/" + jobName + "?tool=" + tool + "&pattern=" + pattern + "&jenkinsHost=" + jenkinsHost + "&jenkinsPort=" + jenkinsPort);
-
+    public void sendBackResults(String tool, String pattern, String jobName, FilePath workspace, String slave) throws MalformedURLException {
+    	URL feedbackUrl = new URL(serverUrl + "/import/" + jobName + "?tool=" + tool + "&pattern=" + pattern + "&jenkinsHost=" + jenkinsHost + "&jenkinsPort=" + jenkinsPort + "&slave=" + slave);
         HttpURLConnection connection = null;
         try {
         	LOGGER.info("logger: Trying to sent workspace: " + workspace.toURI().toString() + " to XL Test on URL: " + feedbackUrl.toString());
@@ -98,6 +103,7 @@ public class XLTestServerImpl implements XLTestServer {
             connection.setUseCaches(false);
             String authorization = "Basic " + new String(Base64.encode((user + ":" + password).getBytes()));
             LOGGER.info("Authorization token: " + authorization);
+            
             connection.setRequestProperty("Authorization", authorization);
 
             connection.setRequestMethod("POST");
@@ -115,8 +121,8 @@ public class XLTestServerImpl implements XLTestServer {
             // Need this to trigger the sending of the request
             int responseCode = connection.getResponseCode();
 
-            LOGGER.info("Zip sent containing: " + numberOfFilesArchived +" files. Response code from XL Test was: " + responseCode);
-                        
+            LOGGER.info("Zip sent containing: " + numberOfFilesArchived +" files. Response code from XL Test was: " + responseCode);   
+            
         } catch (IOException e) {
             LOGGER.error("Could not deliver page information", e);
         } catch (InterruptedException e) {
