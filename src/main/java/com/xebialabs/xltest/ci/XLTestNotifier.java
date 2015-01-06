@@ -101,8 +101,9 @@ public class XLTestNotifier extends Notifier {
 
         FilePath workspace = build.getWorkspace();
         String slave = build.getBuiltOn().getDisplayName();
-        
-        getXLTestServer().sendBackResults(tool, pattern, jobName, workspace, slave);
+        String jobResult = build.getResult().toString().toLowerCase();
+
+        getXLTestServer().sendBackResults(tool, pattern, jobName, workspace, slave, jobResult);
         
         return true;
     }

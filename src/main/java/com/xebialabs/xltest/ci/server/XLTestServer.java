@@ -25,7 +25,6 @@ package com.xebialabs.xltest.ci.server;
 
 import hudson.FilePath;
 
-import java.io.FileNotFoundException;
 import java.net.MalformedURLException;
 
 public interface XLTestServer {
@@ -33,5 +32,5 @@ public interface XLTestServer {
 
     Object getVersion();
     
-    void sendBackResults(String tool, String pattern, String jobName, FilePath workspace, String slave) throws MalformedURLException;
+    void sendBackResults(String tool, String pattern, String jobName, FilePath workspace, String slave, String jobResult) throws MalformedURLException;
 }

@@ -91,8 +91,8 @@ public class XLTestServerImpl implements XLTestServer {
         return serverUrl;
     }
     
-    public void sendBackResults(String tool, String pattern, String jobName, FilePath workspace, String slave) throws MalformedURLException {
-    	URL feedbackUrl = new URL(serverUrl + "/import/" + jobName + "?tool=" + tool + "&pattern=" + pattern + "&jenkinsHost=" + jenkinsHost + "&jenkinsPort=" + jenkinsPort + "&slave=" + slave);
+    public void sendBackResults(String tool, String pattern, String jobName, FilePath workspace, String slave, String jobResult) throws MalformedURLException {
+    	URL feedbackUrl = new URL(serverUrl + "/import/" + jobName + "?tool=" + tool + "&pattern=" + pattern + "&jenkinsHost=" + jenkinsHost + "&jenkinsPort=" + jenkinsPort + "&slave=" + slave + "&jobResult=" + jobResult);
         HttpURLConnection connection = null;
         try {
         	LOGGER.info("logger: Trying to sent workspace: " + workspace.toURI().toString() + " to XL Test on URL: " + feedbackUrl.toString());
