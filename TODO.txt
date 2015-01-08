@@ -1,0 +1,4 @@
+
+- release op jenkins (XebialabsCI account), zie intranet
+- testen werkend krijgen
+- wiki pagina aanmaken op wiki.jenkins-ci.org
