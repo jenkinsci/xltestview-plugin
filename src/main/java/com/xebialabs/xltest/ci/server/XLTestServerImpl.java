@@ -106,7 +106,7 @@ public class XLTestServerImpl implements XLTestServer {
             connection.setRequestMethod("POST");
             connection.setRequestProperty("Content-Type", "application/zip");
             ArchiverFactory factory = ArchiverFactory.ZIP;
-            DirScanner scanner = new Glob(pattern, null); // no excludes supported (yet)
+            DirScanner scanner = new Glob(pattern + "," + pattern + "/**", null); // no excludes supported (yet)
             LOGGER.info("Going to scan dir: " + workspace.getRemote() + " for files to zip using pattern: " + pattern);
             
             OutputStream os = connection.getOutputStream();
