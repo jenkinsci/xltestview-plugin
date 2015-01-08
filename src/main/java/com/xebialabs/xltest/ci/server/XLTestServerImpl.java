@@ -28,14 +28,12 @@ import hudson.util.DirScanner;
 import hudson.util.DirScanner.Glob;
 import hudson.util.io.ArchiverFactory;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Map;
 
 import javax.ws.rs.core.MediaType;
 
@@ -80,9 +78,9 @@ public class XLTestServerImpl implements XLTestServer {
         client.addFilter( new HTTPBasicAuthFilter(user, password) );
         WebResource service = client.resource(serverUrl);
 
-        LoggerFactory.getLogger(this.getClass()).info("Check that XL Test is running");
+        LOGGER.info("Check that XL Test is running");
         String xltest = service.path("data").accept(MediaType.APPLICATION_JSON).get(ClientResponse.class).toString();
-        LoggerFactory.getLogger(this.getClass()).info(xltest + "\n");
+        LOGGER.info(xltest + "\n");
 
     }
 
@@ -91,26 +89,25 @@ public class XLTestServerImpl implements XLTestServer {
         return serverUrl;
     }
     
-    public void sendBackResults(String tool, String pattern, String jobName, FilePath workspace, String slave, String jobResult) throws MalformedURLException {
-    	URL feedbackUrl = new URL(serverUrl + "/import/" + jobName + "?tool=" + tool + "&pattern=" + pattern + "&jenkinsHost=" + jenkinsHost + "&jenkinsPort=" + jenkinsPort + "&slave=" + slave + "&jobResult=" + jobResult);
+    public void sendBackResults(String tool, String pattern, String jobName, FilePath workspace, String slave, String jobResult, Map<String, String> buildVariables) throws MalformedURLException {
+    	URL feedbackUrl = new URL(serverUrl + "/import/" + jobName + "?tool=" + tool + "&pattern=" + pattern + "&jenkinsHost=" + jenkinsHost + "&jenkinsPort=" + jenkinsPort + "&slave=" + slave + "&jobResult=" + jobResult + makeRequestParameters(buildVariables));
         HttpURLConnection connection = null;
         try {
-        	LOGGER.info("logger: Trying to sent workspace: " + workspace.toURI().toString() + " to XL Test on URL: " + feedbackUrl.toString());
+        	LOGGER.info("Trying to send workspace: " + workspace.toURI().toString() + " to XL Test on URL: " + feedbackUrl.toString());
             connection = (HttpURLConnection) feedbackUrl.openConnection();
             connection.setDoOutput(true);
             connection.setDoInput(true);
             connection.setInstanceFollowRedirects(false);
             connection.setUseCaches(false);
+
             String authorization = "Basic " + new String(Base64.encode((user + ":" + password).getBytes()));
-            LOGGER.info("Authorization token: " + authorization);
-            
             connection.setRequestProperty("Authorization", authorization);
 
             connection.setRequestMethod("POST");
             connection.setRequestProperty("Content-Type", "application/zip");
             ArchiverFactory factory = ArchiverFactory.ZIP;
             DirScanner scanner = new Glob(pattern, null); // no excludes supported (yet)
-            LOGGER.info("logger: Going to scan dir: " + workspace.getRemote() + " for files to zip using pattern: " + pattern);
+            LOGGER.info("Going to scan dir: " + workspace.getRemote() + " for files to zip using pattern: " + pattern);
             
             OutputStream os = connection.getOutputStream();
             int numberOfFilesArchived = workspace.archive(factory, os, scanner);
@@ -126,13 +123,23 @@ public class XLTestServerImpl implements XLTestServer {
         } catch (IOException e) {
             LOGGER.error("Could not deliver page information", e);
         } catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+            LOGGER.error("Execution was interrupted", e);
 		} finally {
             if (connection != null) {
                 connection.disconnect();
             }
         }
+    }
+
+    private String makeRequestParameters(Map<String, String> buildVariables) {
+        StringBuilder builder = new StringBuilder(256);
+        for (Map.Entry<String, String> entry : buildVariables.entrySet()) {
+            builder.append('&')
+                    .append(entry.getKey())
+                    .append('=')
+                    .append(entry.getValue());
+        }
+        return builder.toString();
     }
 
 }

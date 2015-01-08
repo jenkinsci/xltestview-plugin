@@ -103,7 +103,12 @@ public class XLTestNotifier extends Notifier {
         String slave = build.getBuiltOn().getDisplayName();
         String jobResult = build.getResult().toString().toLowerCase();
 
-        getXLTestServer().sendBackResults(tool, pattern, jobName, workspace, slave, jobResult);
+        // TODO: can we get runId as request parameter and send it back to XL Test?
+        int buildNumber = build.getNumber();
+
+        System.out.println("Sending back results to XL Test " + buildNumber + "; " + build.getBuildVariables());
+
+        getXLTestServer().sendBackResults(tool, pattern, jobName, workspace, slave, jobResult, build.getBuildVariables());
         
         return true;
     }

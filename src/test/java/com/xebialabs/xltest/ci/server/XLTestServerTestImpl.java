@@ -26,6 +26,7 @@ package com.xebialabs.xltest.ci.server;
 import hudson.FilePath;
 
 import java.net.MalformedURLException;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,10 +61,9 @@ public class XLTestServerTestImpl implements XLTestServer {
         return serverUrl;
     }
 
-	@Override
-	public void sendBackResults(String tool, String pattern, String jobName, FilePath workspace, String slave) throws MalformedURLException {
-		// TODO Auto-generated method stub
-		
-	}
+    @Override
+    public void sendBackResults(String tool, String pattern, String jobName, FilePath workspace, String slave, String jobResult, Map<String, String> buildVariables) throws MalformedURLException {
+
+    }
 
 }

@@ -26,11 +26,12 @@ package com.xebialabs.xltest.ci.server;
 import hudson.FilePath;
 
 import java.net.MalformedURLException;
+import java.util.Map;
 
 public interface XLTestServer {
     void newCommunicator();
 
     Object getVersion();
     
-    void sendBackResults(String tool, String pattern, String jobName, FilePath workspace, String slave, String jobResult) throws MalformedURLException;
+    void sendBackResults(String tool, String pattern, String jobName, FilePath workspace, String slave, String jobResult, Map<String, String> buildVariables) throws MalformedURLException;
 }
