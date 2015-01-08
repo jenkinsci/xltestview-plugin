@@ -3,5 +3,5 @@
   This view is used to render the installed plugins page.
 -->
 <div>
-  Send Test Results from Jenkins to <a href='http://www.xebialabs.com'>XL Test</a>.
+  Send Test Results from Jenkins to <a href='http://xebialabs.com/products/xl-test'>XL Test</a>.
 </div>
