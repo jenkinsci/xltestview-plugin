@@ -41,9 +41,6 @@ localizer.dependsOn deleteGeneratedSrcLocalizer
 repositories {
     mavenCentral()
     maven {
-        url "${projectDir}/repo"
-    }
-    maven {
         name "jenkins"
         delegate.url("http://maven.jenkins-ci.org/content/repositories/releases/")
     }
