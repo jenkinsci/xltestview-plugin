@@ -89,21 +89,7 @@ configurations {
     testCompile.exclude group: 'org.netbeans.modules', module: "org-netbeans-insane"
 }
 
-def truezipVersion = "7.1.4" // this is the latest version not to bork on a Java6 Jenkins master/slave-setup
-// (Later versions reference NIO.2, resulting in a NoClassDefFoundError on java.nio.file.Path)
-
-configurations.all {
-    resolutionStrategy {
-        force "de.schlichtherle.truezip:truezip-driver-file:$truezipVersion"
-        force "de.schlichtherle.truezip:truezip-driver-zip:$truezipVersion"
-        force "de.schlichtherle.truezip:truezip-file:$truezipVersion"
-        force "de.schlichtherle.truezip:truezip-kernel:$truezipVersion"
-        force "de.schlichtherle.truezip:truezip-swing:$truezipVersion"
-    }
-}
-
 task test(type:Exec, overwrite:true) {
-
     commandLine 'mvn', 'clean', 'test'
 }
 
