@@ -38,6 +38,33 @@ task deleteGeneratedSrcLocalizer(type:Delete) {
 
 localizer.dependsOn deleteGeneratedSrcLocalizer
 
+buildscript {
+    repositories {
+        mavenCentral()
+        maven {
+            url 'http://repo.jenkins-ci.org/releases/'
+        }
+    }
+    dependencies {
+        classpath 'org.jenkins-ci.tools:gradle-jpi-plugin:0.5.0'
+    }
+}
+
+jenkinsPlugin {
+    coreVersion = '1.509.4' // we need to support LTS versions
+    displayName = "XebiaLabs XL Test Plugin"
+    url = 'https://wiki.jenkins-ci.org/display/JENKINS/XL+Test+Plugin'
+    gitHubUrl = 'https://github.com/jenkinsci/XL+Test-plugin'
+
+    developers {
+        developer {
+            id 'XebiaLabsCI'
+            name 'XebiaLabs'
+            email 'xl-developers (at) xebialabs (dot) com'
+        }
+    }
+}
+
 repositories {
     mavenCentral()
     maven {
@@ -46,35 +73,24 @@ repositories {
     }
 }
 
-buildscript {
-    repositories {
-        maven {
-            name "jenkins"
-            delegate.url("http://maven.jenkins-ci.org/content/repositories/releases/")
-        }
-        // The plugin is currently only available via the Jenkins
-        // Maven repository, but has dependencies in Maven Central.
-        mavenCentral()
+// if buidling in XebiaLabs infrastructure configure our repository
+if(project.hasProperty('nexusBaseUrl')) {
+    def uploadArchives = tasks.getByName("uploadArchives")
+    uploadArchives.doFirst {
+        repositories {
+            def nexusReleaseUrl = "${project.nexusBaseUrl}/repositories/releases"
+            if (project.version.toString().contains("-alpha-")) {
+                nexusReleaseUrl = "${project.nexusBaseUrl}/repositories/alphas"
+            }
 
-    }
-    dependencies {
-        classpath 'org.jenkins-ci.tools:gradle-jpi-plugin:0.4.0'
-    }
-}
-
-
-jenkinsPlugin {
-    coreVersion = '1.509.4' // we need to support LTS versions
-    displayName = "XebiaLabs XL Test Plugin"
-    url = 'https://wiki.jenkins-ci.org/display/JENKINS/XL+Test+Plugin'
-    gitHubUrl = 'https://github.com/jenkinsci/XL+Test-plugin'
-
-
-    developers {
-        developer {
-            id 'XebiaLabsCI'
-            name 'XebiaLabs'
-            email 'xl-developers (at) xebialabs (dot) com'
+            mavenDeployer {
+                repository(url: nexusReleaseUrl) {
+                    authentication(userName: "${project.nexusUserName}", password: "${project.nexusPassword}")
+                }
+                snapshotRepository(url: "${project.nexusBaseUrl}/repositories/snapshots") {
+                    authentication(userName: "${project.nexusUserName}", password: "${project.nexusPassword}")
+                }
+            }
         }
     }
 }
