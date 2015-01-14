@@ -108,7 +108,7 @@ public class XLTestNotifier extends Notifier {
 
         System.out.println("Sending back results to XL Test " + buildNumber + "; " + build.getBuildVariables());
 
-        getXLTestServer().sendBackResults(tool, pattern, jobName, workspace, slave, jobResult, build.getBuildVariables());
+        getXLTestServer().sendBackResults(tool, pattern, jobName, workspace, slave, buildNumber, jobResult, build.getBuildVariables());
         
         return true;
     }
