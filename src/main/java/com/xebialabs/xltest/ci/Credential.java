@@ -55,30 +55,18 @@ public class Credential extends AbstractDescribableImpl<Credential> {
     public final String username;
     public final Secret password;
     private final SecondaryServerInfo secondaryServerInfo;
-    public final String jenkinsHost;
-    public final int jenkinsPort;
 
     @DataBoundConstructor
-    public Credential(String name, String username, Secret password, SecondaryServerInfo secondaryServerInfo, String jenkinsHost, int jenkinsPort) {
+    public Credential(String name, String username, Secret password, SecondaryServerInfo secondaryServerInfo) {
         this.name = name;
         this.username = username;
         this.password = password;
         this.secondaryServerInfo = secondaryServerInfo;
-        this.jenkinsHost = jenkinsHost;
-        this.jenkinsPort = jenkinsPort;
     }
 
     public String getName() {
         return name;
     }
-
-    public String getJenkinsHost() {
-		return jenkinsHost;
-	}
-
-	public int getJenkinsPort() {
-		return jenkinsPort;
-	}
 
 	public  String getSecondaryServerUrl() {
         if (secondaryServerInfo != null) {
@@ -227,7 +215,7 @@ public class Credential extends AbstractDescribableImpl<Credential> {
                 String serverUrl = Strings.isNullOrEmpty(secondaryServerUrl) ? xlTestServerUrl : secondaryServerUrl;
                 String proxyUrl = Strings.isNullOrEmpty(secondaryProxyUrl) ? xlTestClientProxyUrl : secondaryProxyUrl;
 
-                XLTestServer xlTestServer = XLTestServerFactory.newInstance(serverUrl, proxyUrl, username, password.getPlainText(), jenkinsHost, jenkinsPort);
+                XLTestServer xlTestServer = XLTestServerFactory.newInstance(serverUrl, proxyUrl, username, password.getPlainText());
                 xlTestServer.newCommunicator(); // throws IllegalStateException if creds invalid
                 return FormValidation.ok("Your XL Test instance [%s] is alive, and your credentials are valid!", xlTestServer.getVersion());
             } catch(IllegalStateException e) {

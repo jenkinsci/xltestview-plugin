@@ -31,14 +31,14 @@ import com.google.common.reflect.Reflection;
 
 
 public class XLTestServerFactory {
-    public boolean validConnection(String serverUrl, String proxyUrl, String username, String password, String jenkinsHost, int jenkinsPort) throws IllegalStateException {
-        newInstance(serverUrl, proxyUrl, username, password, jenkinsHost, jenkinsPort).newCommunicator();  //throws IllegalStateException on failure.
+    public boolean validConnection(String serverUrl, String proxyUrl, String username, String password) throws IllegalStateException {
+        newInstance(serverUrl, proxyUrl, username, password).newCommunicator();  //throws IllegalStateException on failure.
         return true;
     }
 
 
-    public static XLTestServer newInstance(String serverUrl, String proxyUrl, String username, String password, String jenkinsHost, int jenkinsPort) {
-        XLTestServerImpl server = new XLTestServerImpl(serverUrl, proxyUrl, username, password, jenkinsHost, jenkinsPort);
+    public static XLTestServer newInstance(String serverUrl, String proxyUrl, String username, String password) {
+        XLTestServerImpl server = new XLTestServerImpl(serverUrl, proxyUrl, username, password);
         return Reflection.newProxy(XLTestServer.class, new PluginFirstClassloaderInvocationHandler(server));
     }
 

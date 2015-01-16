@@ -95,20 +95,19 @@ public class XLTestNotifier extends Notifier {
     @Override
     public boolean perform(final AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
 
-        String jobName = ((AbstractItem)build.getProject()).getName();
+        String jobName = (build.getProject()).getName();
         // perhaps we need the build number later??? Use e.g. build.getUrl(); which returns something like job/foo/32
         // String rootUrlAsString = Jenkins.getInstance().getRootUrl(); // gives http://localhost/jenkins or whatever was specified
 
         FilePath workspace = build.getWorkspace();
+        String hudsonUrl = build.getEnvironment(listener).get("HUDSON_URL");
         String slave = build.getBuiltOn().getDisplayName();
-        String jobResult = build.getResult().toString().toLowerCase();
-
-        // TODO: can we get runId as request parameter and send it back to XL Test?
         int buildNumber = build.getNumber();
+        String jobResult = build.getResult().toString().toLowerCase();
 
         System.out.println("Sending back results to XL Test " + buildNumber + "; " + build.getBuildVariables());
 
-        getXLTestServer().sendBackResults(tool, pattern, jobName, workspace, slave, buildNumber, jobResult, build.getBuildVariables());
+        getXLTestServer().sendBackResults(tool, pattern, jobName, workspace, hudsonUrl, slave, buildNumber, jobResult, build.getBuildVariables());
         
         return true;
     }
@@ -148,11 +147,9 @@ public class XLTestNotifier extends Notifier {
             for (Credential credential : credentials) {
                 String serverUrl = credential.resolveServerUrl(xlTestServerUrl);
                 String proxyUrl = credential.resolveProxyUrl(xlTestClientProxyUrl);
-                String jenkinsHost = credential.getJenkinsHost();
-                int jenkinsPort = credential.getJenkinsPort();
 
                 credentialServerMap.put(credential.name,
-                        XLTestServerFactory.newInstance(serverUrl, proxyUrl, credential.username, credential.password != null ? credential.password.getPlainText() : "", jenkinsHost, jenkinsPort));
+                        XLTestServerFactory.newInstance(serverUrl, proxyUrl, credential.username, credential.password != null ? credential.password.getPlainText() : ""));
             }
         }
 

@@ -56,17 +56,13 @@ public class XLTestServerImpl implements XLTestServer {
     private String password;
     private String proxyUrl;
     private String serverUrl;
-    private String jenkinsHost;
-    private int jenkinsPort;
-    
 
-    XLTestServerImpl(String serverUrl, String proxyUrl, String username, String password, String jenkinsHost, int jenkinsPort) {
+
+    XLTestServerImpl(String serverUrl, String proxyUrl, String username, String password) {
         this.user=username;
         this.password=password;
         this.proxyUrl=proxyUrl;
         this.serverUrl=serverUrl;
-        this.jenkinsHost=jenkinsHost;
-        this.jenkinsPort=jenkinsPort;
     }
 
 
@@ -89,8 +85,8 @@ public class XLTestServerImpl implements XLTestServer {
         return serverUrl;
     }
     
-    public void sendBackResults(String tool, String pattern, String jobName, FilePath workspace, String slave, int buildNumber, String jobResult, Map<String, String> buildVariables) throws MalformedURLException {
-    	URL feedbackUrl = new URL(serverUrl + "/import/" + jobName + "?tool=" + tool + "&pattern=" + pattern + "&jenkinsHost=" + jenkinsHost + "&jenkinsPort=" + jenkinsPort + "&slave=" + slave + "&jobResult=" + jobResult + "&buildNumber=" + buildNumber + makeRequestParameters(buildVariables));
+    public void sendBackResults(String tool, String pattern, String jobName, FilePath workspace, String jenkinsUrl, String slave, int buildNumber, String jobResult, Map<String, String> buildVariables) throws MalformedURLException {
+    	URL feedbackUrl = new URL(serverUrl + "/import/" + jobName + "?tool=" + tool + "&pattern=" + pattern + "&jenkinsUrl=" + jenkinsUrl + "&slave=" + slave + "&jobResult=" + jobResult + "&buildNumber=" + buildNumber + makeRequestParameters(buildVariables));
         HttpURLConnection connection = null;
         try {
         	LOGGER.info("Trying to send workspace: " + workspace.toURI().toString() + " to XL Test on URL: " + feedbackUrl.toString());

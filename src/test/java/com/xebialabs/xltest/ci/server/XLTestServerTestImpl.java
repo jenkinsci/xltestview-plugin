@@ -62,7 +62,7 @@ public class XLTestServerTestImpl implements XLTestServer {
     }
 
     @Override
-    public void sendBackResults(String tool, String pattern, String jobName, FilePath workspace, String slave, int buildNumber, String jobResult, Map<String, String> buildVariables) throws MalformedURLException {
+    public void sendBackResults(String tool, String pattern, String jobName, FilePath workspace, String jenkinsUrl, String slave, int buildNumber, String jobResult, Map<String, String> buildVariables) throws MalformedURLException {
 
     }
 
