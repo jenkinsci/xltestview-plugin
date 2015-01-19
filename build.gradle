@@ -107,6 +107,9 @@ if(project.hasProperty('nexusBaseUrl')) {
                 snapshotRepository(url: "${project.nexusBaseUrl}/repositories/snapshots") {
                     authentication(userName: "${project.nexusUserName}", password: "${project.nexusPassword}")
                 }
+                addFilter('jpi') {artifact, file ->
+                    artifact.type == 'jpi'
+                }
             }
         }
     }
