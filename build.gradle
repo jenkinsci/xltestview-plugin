@@ -78,6 +78,10 @@ test.onlyIf { false }
 
 // if buidling in XebiaLabs infrastructure configure our repository
 if(project.hasProperty('nexusBaseUrl')) {
+    // return the version number
+    tasks.jpi.archiveName = "${name}-${version}.hpi"
+
+    // deploy to internal nexus
     def uploadArchives = tasks.getByName("uploadArchives")
     uploadArchives.doFirst {
         repositories {
