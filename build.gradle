@@ -21,23 +21,6 @@
  * Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-group = "com.xebialabs.ci"
-version = "2.2.2-SNAPSHOT"
-description = "Package and deploy your applications from Jenkins with &lt;a href='http://www.xebialabs.com'&gt;XebiaLabs XL Test&lt;/a&gt;."
-
-apply plugin: 'eclipse'
-apply plugin: 'idea'
-apply plugin: 'java'
-apply plugin: 'jpi'
-
-build.dependsOn jpi
-
-task deleteGeneratedSrcLocalizer(type:Delete) {
-    delete "build/generated-src/localizer"
-}
-
-localizer.dependsOn deleteGeneratedSrcLocalizer
-
 buildscript {
     repositories {
         mavenCentral()
@@ -47,8 +30,36 @@ buildscript {
     }
     dependencies {
         classpath 'org.jenkins-ci.tools:gradle-jpi-plugin:0.5.0'
+        classpath 'org.eclipse.jgit:org.eclipse.jgit:3.6.1.201501031845-r'
     }
 }
+
+apply plugin: 'java'
+apply plugin: 'jpi'
+apply plugin: com.xebialabs.gradle.plugins.release.ReleasePlugin
+
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+
+group = "com.xebialabs.ci"
+description = "Package and deploy your applications from Jenkins with &lt;a href='http://www.xebialabs.com'&gt;XebiaLabs XL Test&lt;/a&gt;."
+
+com.xebialabs.gradle.plugins.release.util.VersionUtil.setVersion(project)
+
+if (project.rootProject == project) {
+    String msg = "${project.name}-${project.version}"
+    println "+".padRight(msg.length() + 3, '-') + "+"
+    println "| $msg |"
+    println "+".padRight(msg.length() + 3, '-') + "+"
+}
+
+build.dependsOn jpi
+
+task deleteGeneratedSrcLocalizer(type:Delete) {
+    delete "build/generated-src/localizer"
+}
+
+localizer.dependsOn deleteGeneratedSrcLocalizer
 
 jenkinsPlugin {
     coreVersion = '1.509.4' // we need to support LTS versions
@@ -133,5 +144,23 @@ dependencies {
     testCompile "org.powermock:powermock-module-junit4:1.5.3"
     testCompile "org.powermock:powermock-api-mockito:1.5.3"
     testCompile "org.mockito:mockito-all:1.9.5"
+}
 
+// configure release plugin
+import com.xebialabs.gradle.plugins.release.util.ReleaseSupport
+import com.xebialabs.gradle.plugins.release.util.BetaReleaseSupport
+
+releasePlugin {
+    types {
+        release {
+            tag         { -> ReleaseSupport.tag(project) }
+            preBuild    { task -> ReleaseSupport.preBuildConfiguration(project, task) }
+            postBuild   { task -> ReleaseSupport.postBuildConfiguration(project, task) }
+        }
+        beta {
+            tag         { -> BetaReleaseSupport.tag(project) }
+            preBuild    { task -> BetaReleaseSupport.preBuildConfiguration(project, task) }
+            postBuild   { task -> BetaReleaseSupport.postBuildConfiguration(project, task) }
+        }
+    }
 }
