@@ -79,8 +79,7 @@ jenkinsPlugin {
 repositories {
     mavenCentral()
     maven {
-        name "jenkins"
-        delegate.url("http://maven.jenkins-ci.org/content/repositories/releases/")
+        url 'http://repo.jenkins-ci.org/public/'
     }
 }
 
