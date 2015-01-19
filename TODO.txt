@@ -1,4 +1,4 @@
-
 - release op jenkins (XebialabsCI account), zie intranet
 - testen werkend krijgen
 - wiki pagina aanmaken op wiki.jenkins-ci.org
+- apply gradle license plugin to fix license on sources
