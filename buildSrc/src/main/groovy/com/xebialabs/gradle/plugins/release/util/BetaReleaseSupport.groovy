@@ -50,7 +50,7 @@ class BetaReleaseSupport {
 
     static def preBuildConfiguration(Project project, Task task) {
         task.configure {
-            message = "${ -> makeReleaseVersion(project.versionInfo) }"
+            message = "${makeReleaseVersion(project.versionInfo) }"
             file = project.relativePath(project.versionPropertiesFile)
             doFirst {
                 String v = makeReleaseVersion(project.versionInfo)
