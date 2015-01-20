@@ -41,7 +41,7 @@ apply plugin: com.xebialabs.gradle.plugins.release.ReleasePlugin
 apply plugin: 'eclipse'
 apply plugin: 'idea'
 
-group = "com.xebialabs.ci"
+group = "com.xebialabs.xltest.ci"
 description = "Package and deploy your applications from Jenkins with &lt;a href='http://www.xebialabs.com'&gt;XebiaLabs XL Test&lt;/a&gt;."
 
 com.xebialabs.gradle.plugins.release.util.VersionUtil.setVersion(project)
