@@ -5,10 +5,10 @@
         <f:select/>
     </f:entry>
     <f:entry title="${%Tool}" field="tool" help="/plugin/xltest-plugin/help-tool.html">
-		<f:textbox default="one of FitNesse, Cucumber, xUnit, JMeter, ..."/>
+		<f:select/>
     </f:entry>
     <f:entry title="${%Pattern}" field="pattern" help="/plugin/xltest-plugin/help-pattern.html">
-    	<f:textbox default="**/*TEST-*.xml"/>
+    	<f:textbox default=""/>
     </f:entry>
 
 </j:jelly>

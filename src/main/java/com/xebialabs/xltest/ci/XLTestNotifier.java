@@ -67,9 +67,6 @@ public class XLTestNotifier extends Notifier {
 	
     public final String credential;
 
-
-    
-
     @DataBoundConstructor
     public XLTestNotifier(String tool, String pattern, String credential) {
     	this.tool = tool;
@@ -137,8 +134,10 @@ public class XLTestNotifier extends Notifier {
 
         private final transient Map<String,XLTestServer> credentialServerMap = newHashMap();
 
+        // Executed on start-up of the application...
         public XLTestDescriptor() {
             load();  //deserialize from xml
+            System.out.println("Loading credentials... This may take a while");
             mapCredentialsByName();
         }
 
@@ -212,6 +211,14 @@ public class XLTestNotifier extends Notifier {
             ListBoxModel m = new ListBoxModel();
             for (Credential c : credentials)
                 m.add(c.name, c.name);
+            return m;
+        }
+
+        public ListBoxModel doFillToolItems() {
+            ListBoxModel m = new ListBoxModel();
+            m.add("FitNesse", "FitNesse");
+            m.add("Cucumber", "Cucumber");
+            m.add("xUnit", "xUnit");
             return m;
         }
 
