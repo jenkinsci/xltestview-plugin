@@ -24,6 +24,7 @@ package com.xebialabs.xltest.ci.server;
 
 import hudson.FilePath;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Map;
 
@@ -32,5 +33,5 @@ public interface XLTestServer {
 
     Object getVersion();
     
-    void sendBackResults(String tool, String pattern, String jobName, FilePath workspace, String jenkinsUrl, String slave, int buildNumber, String jobResult, Map<String, String> buildVariables) throws MalformedURLException;
+    void sendBackResults(String tool, String pattern, String jobName, FilePath workspace, String jenkinsUrl, String slave, int buildNumber, String jobResult, Map<String, String> buildVariables) throws IOException, InterruptedException;
 }

@@ -48,6 +48,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import net.sf.json.JSONObject;
 
@@ -60,11 +61,12 @@ import com.xebialabs.xltest.ci.server.XLTestServer;
 import com.xebialabs.xltest.ci.server.XLTestServerFactory;
 
 public class XLTestNotifier extends Notifier {
+    private final static Logger LOGGER = Logger.getLogger(XLTestNotifier.class.getName());
 
 	// properties needed to create a TestSpecification at the XL Test server end
 	public final String tool;
 	public final String pattern;
-	
+
     public final String credential;
 
     @DataBoundConstructor
@@ -101,10 +103,9 @@ public class XLTestNotifier extends Notifier {
         int buildNumber = build.getNumber();
         String jobResult = build.getResult().toString().toLowerCase();
 
-        System.out.println("Sending back results to XL Test " + buildNumber + "; " + build.getBuildVariables());
-
+        LOGGER.info("Sending back results to XL Test " + buildNumber + "; " + build.getBuildVariables());
         getXLTestServer().sendBackResults(tool, pattern, jobName, workspace, hudsonUrl, slave, buildNumber, jobResult, build.getBuildVariables());
-        
+
         return true;
     }
 
@@ -124,7 +125,7 @@ public class XLTestNotifier extends Notifier {
 
         private String xlTestServerUrl;
         private String xlTestClientProxyUrl;
-        
+
         private String jenkinsHost;
         private int jenkinsPort;
 
@@ -137,7 +138,7 @@ public class XLTestNotifier extends Notifier {
         // Executed on start-up of the application...
         public XLTestDescriptor() {
             load();  //deserialize from xml
-            System.out.println("Loading credentials... This may take a while");
+            LOGGER.info("Loading credentials... This may take a while");
             mapCredentialsByName();
         }
 
