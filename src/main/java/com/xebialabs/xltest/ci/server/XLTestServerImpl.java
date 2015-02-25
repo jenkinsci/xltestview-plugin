@@ -58,10 +58,10 @@ public class XLTestServerImpl implements XLTestServer {
 
 
     XLTestServerImpl(String serverUrl, String proxyUrl, String username, String password) {
-        this.user=username;
-        this.password=password;
-        this.proxyUrl=proxyUrl;
-        this.serverUrl=serverUrl;
+        this.user = username;
+        this.password = password;
+        this.proxyUrl = proxyUrl;
+        this.serverUrl = serverUrl + "/api/internal";
     }
 
 
