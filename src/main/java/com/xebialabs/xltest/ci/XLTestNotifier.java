@@ -103,7 +103,7 @@ public class XLTestNotifier extends Notifier {
         int buildNumber = build.getNumber();
         String jobResult = build.getResult().toString().toLowerCase();
 
-        LOGGER.info("Sending back results to XL Test " + buildNumber + "; " + build.getBuildVariables());
+        listener.getLogger().println("[XL Test] Sending back results to XL Test " + buildNumber + "; " + build.getBuildVariables());
         getXLTestServer().sendBackResults(tool, pattern, jobName, workspace, hudsonUrl, slave, buildNumber, jobResult, build.getBuildVariables());
 
         return true;
@@ -125,9 +125,6 @@ public class XLTestNotifier extends Notifier {
 
         private String xlTestServerUrl;
         private String xlTestClientProxyUrl;
-
-        private String jenkinsHost;
-        private int jenkinsPort;
 
         private List<Credential> credentials = newArrayList();
 
