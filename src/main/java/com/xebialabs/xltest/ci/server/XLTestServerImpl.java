@@ -24,12 +24,14 @@ package com.xebialabs.xltest.ci.server;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.PrintStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.UriBuilder;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
@@ -46,6 +48,7 @@ import hudson.util.io.ArchiverFactory;
 public class XLTestServerImpl implements XLTestServer {
 
     private final static Logger LOGGER = Logger.getLogger(XLTestServerImpl.class.getName());
+    public static final String XL_TEST_LOG_PREFIX = "[XL Test]";
     private String user;
     private String password;
     private String proxyUrl;
@@ -89,10 +92,15 @@ public class XLTestServerImpl implements XLTestServer {
     }
 
     @Override
-    public void sendBackResults(String tool, String pattern, String jobName, FilePath workspace, String jenkinsUrl, String slave, int buildNumber, String jobResult, Map<String, String> buildVariables) throws IOException, InterruptedException {
-        URL feedbackUrl = new URL(serverUrl + "/import/" + jobName + "?tool=" + tool + "&pattern=" + pattern + "&jenkinsUrl=" + jenkinsUrl + "&slave=" + slave + "&jobResult=" + jobResult + "&buildNumber=" + buildNumber + makeRequestParameters(buildVariables));
+    public void sendBackResults(FilePath workspace,  String jobName, String pattern, Map<String, String> queryParameters, PrintStream logger) throws IOException, InterruptedException {
+//        URL feedbackUrl = new URL(serverUrl + "/import/" + jobName + "?tool=" + tool + "&pattern=" + pattern + "&jenkinsUrl=" + jenkinsUrl + "&slave=" + slave + "&jobResult=" + jobResult + "&buildNumber=" + buildNumber + addRequestParameters(buildVariables));
+        UriBuilder builder = UriBuilder.fromPath(serverUrl).path("/import/{arg1}");
+        addRequestParameters(builder, queryParameters);
+        URL feedbackUrl = builder.build(jobName).toURL();
+
         HttpURLConnection connection = null;
         try {
+            log(logger, Level.INFO, "Trying to send workspace: " + workspace.toURI().toString() + " to XL Test on URL: " + feedbackUrl.toString());
             LOGGER.info("Trying to send workspace: " + workspace.toURI().toString() + " to XL Test on URL: " + feedbackUrl.toString());
             connection = (HttpURLConnection) feedbackUrl.openConnection();
             connection.setDoOutput(true);
@@ -107,6 +115,7 @@ public class XLTestServerImpl implements XLTestServer {
             connection.setRequestProperty("Content-Type", "application/zip");
             ArchiverFactory factory = ArchiverFactory.ZIP;
             DirScanner scanner = new Glob(pattern + "," + pattern + "/**", null); // no excludes supported (yet)
+            log(logger, Level.INFO, "Going to scan dir: " + workspace.getRemote() + " for files to zip using pattern: " + pattern);
             LOGGER.info("Going to scan dir: " + workspace.getRemote() + " for files to zip using pattern: " + pattern);
 
             int numberOfFilesArchived;
@@ -117,13 +126,14 @@ public class XLTestServerImpl implements XLTestServer {
 
             // Need this to trigger the sending of the request
             int responseCode = connection.getResponseCode();
-
-            LOGGER.info("Zip sent containing: " + numberOfFilesArchived + " files. Response code from XL Test was: " + responseCode);
+            log(logger, Level.INFO, "Zip sent containing: " + numberOfFilesArchived + " files. Response code from XL Test was: " + responseCode);
 
         } catch (IOException e) {
+            log(logger, Level.SEVERE, "Could not deliver page information", e);
             LOGGER.log(Level.SEVERE, "Could not deliver page information", e);
             throw e;
         } catch (InterruptedException e) {
+            log(logger, Level.SEVERE, "Execution was interrupted", e);
             LOGGER.log(Level.SEVERE, "Execution was interrupted", e);
             throw e;
         } finally {
@@ -133,15 +143,20 @@ public class XLTestServerImpl implements XLTestServer {
         }
     }
 
-    private String makeRequestParameters(Map<String, String> buildVariables) {
-        StringBuilder builder = new StringBuilder(256);
+    private void addRequestParameters(UriBuilder builder, Map<String, String> buildVariables) {
         for (Map.Entry<String, String> entry : buildVariables.entrySet()) {
-            builder.append('&')
-                    .append(entry.getKey())
-                    .append('=')
-                    .append(entry.getValue());
+            builder.queryParam(entry.getKey(), entry.getValue());
         }
-        return builder.toString();
     }
 
+    private void log(PrintStream logger, Level level, String message) {
+        log(logger, level, message, null);
+    }
+
+    private void log(PrintStream logger, Level level, String message, Exception e) {
+        logger.println(XL_TEST_LOG_PREFIX + " [" + level.toString() + "] " + message);
+        if (e != null) {
+            e.printStackTrace(logger);
+        }
+    }
 }

@@ -22,58 +22,56 @@
  */
 package com.xebialabs.xltest.ci;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.collect.Lists.newArrayList;
-import static com.google.common.collect.Maps.newHashMap;
-import static hudson.util.FormValidation.error;
-import static hudson.util.FormValidation.ok;
-import static hudson.util.FormValidation.warning;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Logger;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.StaplerRequest;
+import com.google.common.base.Strings;
+
+import com.xebialabs.xltest.ci.server.XLTestServer;
+import com.xebialabs.xltest.ci.server.XLTestServerFactory;
+
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.BuildListener;
 import hudson.model.AbstractBuild;
-import hudson.model.AbstractItem;
 import hudson.model.AbstractProject;
-import hudson.model.Hudson;
+import hudson.model.BuildListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Notifier;
 import hudson.tasks.Publisher;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
-
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.List;
-import java.util.Map;
-import java.util.logging.Logger;
-
 import net.sf.json.JSONObject;
 
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.StaplerRequest;
-
-import com.google.common.base.Strings;
-import com.xebialabs.xltest.ci.server.XLTestServer;
-import com.xebialabs.xltest.ci.server.XLTestServerFactory;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.collect.Lists.newArrayList;
+import static com.google.common.collect.Maps.newHashMap;
+import static hudson.util.FormValidation.error;
+import static hudson.util.FormValidation.ok;
+import static hudson.util.FormValidation.warning;
 
 public class XLTestNotifier extends Notifier {
     private final static Logger LOGGER = Logger.getLogger(XLTestNotifier.class.getName());
 
-	// properties needed to create a TestSpecification at the XL Test server end
-	public final String tool;
-	public final String pattern;
+    // properties needed to create a TestSpecification at the XL Test server end
+    public final String tool;
+    public final String pattern;
 
     public final String credential;
 
     @DataBoundConstructor
     public XLTestNotifier(String tool, String pattern, String credential) {
-    	this.tool = tool;
-    	this.pattern = pattern;
-    	this.credential = credential;
+        this.tool = tool;
+        this.pattern = pattern;
+        this.credential = credential;
     }
 
     public BuildStepMonitor getRequiredMonitorService() {
@@ -102,9 +100,16 @@ public class XLTestNotifier extends Notifier {
         String slave = build.getBuiltOn().getDisplayName();
         int buildNumber = build.getNumber();
         String jobResult = build.getResult().toString().toLowerCase();
-
-        listener.getLogger().println("[XL Test] Sending back results to XL Test " + buildNumber + "; " + build.getBuildVariables());
-        getXLTestServer().sendBackResults(tool, pattern, jobName, workspace, hudsonUrl, slave, buildNumber, jobResult, build.getBuildVariables());
+        Map<String, String> queryParams = new LinkedHashMap<>();
+        queryParams.put("tool", tool);
+        queryParams.put("pattern", pattern);
+        queryParams.put("jenkinsUrl", hudsonUrl);
+        queryParams.put("slave", slave);
+        queryParams.put("buildNumber", Integer.toString(buildNumber));
+        queryParams.put("jobResult", jobResult);
+        queryParams.putAll(build.getBuildVariables());
+        listener.getLogger().println("[XL Test] Sending back results to XL Test " + buildNumber + "; " + queryParams);
+        getXLTestServer().sendBackResults(workspace, jobName, pattern, queryParams, listener.getLogger());
 
         return true;
     }
@@ -130,7 +135,7 @@ public class XLTestNotifier extends Notifier {
 
         // ************ OTHER NON-SERIALIZABLE PROPERTIES *********** //
 
-        private final transient Map<String,XLTestServer> credentialServerMap = newHashMap();
+        private final transient Map<String, XLTestServer> credentialServerMap = newHashMap();
 
         // Executed on start-up of the application...
         public XLTestDescriptor() {
@@ -176,7 +181,7 @@ public class XLTestNotifier extends Notifier {
                     new URL(url);
                 }
             } catch (MalformedURLException e) {
-                return error("%s is not a valid URL.",url);
+                return error("%s is not a valid URL.", url);
             }
             return ok();
 
