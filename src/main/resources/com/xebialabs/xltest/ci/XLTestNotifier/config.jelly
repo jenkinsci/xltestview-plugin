@@ -20,12 +20,16 @@
             var tool = document.getElementById('xl-test-pb-tool');
             var pattern = document.getElementById('xl-test-pb-pattern');
 
-            tool.addEventListener('change', function (ev) {
-                binding.defaultPattern(tool.value, function(t) {
-                    var p = t.responseObject();
-                    pattern.value = p;
+            if (tool) {
+                tool.addEventListener('change', function (ev) {
+                    binding.defaultPattern(tool.value, function(t) {
+                        var p = t.responseObject();
+                        pattern.value = p;
+                    });
                 });
-            });
+            } else {
+                console.log("unable to add listener to tool because it cannot be found");
+            }
         })();
     </script>
 
