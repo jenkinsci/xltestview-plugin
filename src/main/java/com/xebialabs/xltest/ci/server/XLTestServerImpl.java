@@ -69,7 +69,7 @@ public class XLTestServerImpl implements XLTestServer {
 
 
     @Override
-    public void newCommunicator() {
+    public void checkConnection() {
         // setup REST-Client
         ClientConfig config = new DefaultClientConfig();
         Client client = Client.create(config);

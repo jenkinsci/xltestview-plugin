@@ -206,7 +206,7 @@ public class Credential extends AbstractDescribableImpl<Credential> {
                 String proxyUrl = Strings.isNullOrEmpty(secondaryProxyUrl) ? xlTestClientProxyUrl : secondaryProxyUrl;
 
                 XLTestServer xlTestServer = XLTestServerFactory.newInstance(serverUrl, proxyUrl, username, password.getPlainText());
-                xlTestServer.newCommunicator(); // throws IllegalStateException if creds invalid
+                xlTestServer.checkConnection(); // throws IllegalStateException if creds invalid
                 return FormValidation.ok("Your XL Test instance [%s] is alive, and your credentials are valid!", xlTestServer.getVersion());
             } catch(IllegalStateException e) {
                 return FormValidation.error(e.getMessage());

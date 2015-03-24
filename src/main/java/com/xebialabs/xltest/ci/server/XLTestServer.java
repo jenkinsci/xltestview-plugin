@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface XLTestServer {
-    void newCommunicator();
+    void checkConnection();
 
     Object getVersion();
     

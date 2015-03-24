@@ -53,7 +53,7 @@ public class XLTestServerTestImpl implements XLTestServer {
 
 
     @Override
-    public void newCommunicator() {
+    public void checkConnection() {
 
     }
 
