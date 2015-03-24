@@ -43,6 +43,7 @@ import net.sf.json.JSONObject;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.bind.JavaScriptMethod;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -147,6 +148,17 @@ public class XLTestNotifier extends Notifier {
             credentials = req.bindJSONToList(Credential.class, json.get("credentials"));
             save();  //serialize to xml
             return true;
+        }
+
+        @JavaScriptMethod
+        public String defaultPattern(String name) {
+            List<TestTool> testTools = getFirstXLTestServer().getTestTools();
+            for (TestTool testTool : testTools) {
+                if (testTool.getName().equalsIgnoreCase(name)) {
+                    return testTool.getPattern();
+                }
+            }
+            return "";
         }
 
         @Override
