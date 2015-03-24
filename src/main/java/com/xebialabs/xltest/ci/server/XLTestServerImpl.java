@@ -26,7 +26,10 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,10 +43,12 @@ import com.sun.jersey.api.client.config.DefaultClientConfig;
 import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
 import com.sun.jersey.core.util.Base64;
 
+import com.xebialabs.xltest.ci.server.domain.TestTool;
 import hudson.FilePath;
 import hudson.util.DirScanner;
 import hudson.util.DirScanner.Glob;
 import hudson.util.io.ArchiverFactory;
+import org.codehaus.jackson.map.ObjectMapper;
 
 public class XLTestServerImpl implements XLTestServer {
 
@@ -93,7 +98,6 @@ public class XLTestServerImpl implements XLTestServer {
 
     @Override
     public void sendBackResults(FilePath workspace,  String jobName, String pattern, Map<String, String> queryParameters, PrintStream logger) throws IOException, InterruptedException {
-//        URL feedbackUrl = new URL(serverUrl + "/import/" + jobName + "?tool=" + tool + "&pattern=" + pattern + "&jenkinsUrl=" + jenkinsUrl + "&slave=" + slave + "&jobResult=" + jobResult + "&buildNumber=" + buildNumber + addRequestParameters(buildVariables));
         UriBuilder builder = UriBuilder.fromPath(serverUrl).path("/import/{arg1}");
         addRequestParameters(builder, queryParameters);
         URL feedbackUrl = builder.build(jobName).toURL();
@@ -127,7 +131,9 @@ public class XLTestServerImpl implements XLTestServer {
             // Need this to trigger the sending of the request
             int responseCode = connection.getResponseCode();
             log(logger, Level.INFO, "Zip sent containing: " + numberOfFilesArchived + " files. Response code from XL Test was: " + responseCode);
-
+            if (responseCode != 200) {
+                log(logger, Level.INFO, "Response message: " + connection.getResponseMessage());
+            }
         } catch (IOException e) {
             log(logger, Level.SEVERE, "Could not deliver page information", e);
             LOGGER.log(Level.SEVERE, "Could not deliver page information", e);
@@ -141,6 +147,30 @@ public class XLTestServerImpl implements XLTestServer {
                 connection.disconnect();
             }
         }
+    }
+
+    @Override
+    public List<TestTool> getTestTools() {
+        ClientConfig config = new DefaultClientConfig();
+        Client client = Client.create(config);
+        client.addFilter(new HTTPBasicAuthFilter(user, password));
+        WebResource service = client.resource(serverUrl + "/testtools");
+
+        ClientResponse response = service.path("/").accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
+
+        List<TestTool> testTools = new ArrayList<>();
+
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            List<Map<String, String>> testToolsJsonList = mapper.readValue(response.getEntityInputStream(), List.class);
+            for (Map<String, String> entry : testToolsJsonList) {
+                testTools.add(new TestTool(entry.get("name"), entry.get("pattern")));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return testTools;
     }
 
     private void addRequestParameters(UriBuilder builder, Map<String, String> buildVariables) {

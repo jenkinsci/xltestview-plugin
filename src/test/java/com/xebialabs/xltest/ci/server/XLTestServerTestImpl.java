@@ -22,15 +22,15 @@
  */
 package com.xebialabs.xltest.ci.server;
 
+import com.xebialabs.xltest.ci.server.domain.TestTool;
 import hudson.FilePath;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.PrintStream;
-import java.net.MalformedURLException;
+import java.util.List;
 import java.util.Map;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * This is a mock class! We need this because the combination of PowerMock and JenkinsRule is not possible.
@@ -65,6 +65,11 @@ public class XLTestServerTestImpl implements XLTestServer {
     @Override
     public void sendBackResults(final FilePath workspace, final String jobName, final String pattern, final Map<String, String> queryParameters, final PrintStream logger) throws IOException, InterruptedException {
 
+    }
+
+    @Override
+    public List<TestTool> getTestTools() {
+        return null;
     }
 
 }

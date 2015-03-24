@@ -25,10 +25,10 @@ package com.xebialabs.xltest.ci;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
+
+import com.xebialabs.xltest.ci.server.domain.TestTool;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
@@ -218,11 +218,11 @@ public class XLTestNotifier extends Notifier {
         }
 
         public ListBoxModel doFillToolItems() {
+            List<TestTool> testTools = getFirstXLTestServer().getTestTools();
             ListBoxModel m = new ListBoxModel();
-            m.add("FitNesse", "FitNesse");
-            m.add("Cucumber", "Cucumber");
-            m.add("xUnit", "xUnit");
-            m.add("JMeter", "JMeter");
+            for (TestTool testTool : testTools) {
+                m.add(testTool.getName(), testTool.getName());
+            }
             return m;
         }
 
@@ -235,6 +235,14 @@ public class XLTestNotifier extends Notifier {
             return super.newInstance(req, formData);
         }
 
+
+        private XLTestServer getFirstXLTestServer() {
+            Set<String> keys = credentialServerMap.keySet();
+            if (keys.size() == 0) {
+                throw new RuntimeException("No credentials defined in the system configuration");
+            }
+            return getXLTestServer(keys.toArray(new String[keys.size()])[0]);
+        }
 
         private XLTestServer getXLTestServer(String credential) {
             checkNotNull(credential);

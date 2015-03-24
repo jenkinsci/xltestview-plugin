@@ -22,12 +22,12 @@
  */
 package com.xebialabs.xltest.ci.server;
 
+import com.xebialabs.xltest.ci.server.domain.TestTool;
 import hudson.FilePath;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.PrintStream;
-import java.net.MalformedURLException;
+import java.util.List;
 import java.util.Map;
 
 public interface XLTestServer {
@@ -36,4 +36,6 @@ public interface XLTestServer {
     Object getVersion();
     
     void sendBackResults(FilePath workspace, String jobName, String pattern, Map<String, String> queryParameters, PrintStream logger) throws IOException, InterruptedException;
+
+    List<TestTool> getTestTools();
 }
