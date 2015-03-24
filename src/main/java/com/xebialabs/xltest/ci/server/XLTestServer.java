@@ -22,6 +22,7 @@
  */
 package com.xebialabs.xltest.ci.server;
 
+import com.xebialabs.xltest.ci.server.domain.Qualification;
 import com.xebialabs.xltest.ci.server.domain.TestTool;
 import hudson.FilePath;
 
@@ -38,4 +39,6 @@ public interface XLTestServer {
     void sendBackResults(FilePath workspace, String jobName, String pattern, Map<String, String> queryParameters, PrintStream logger) throws IOException, InterruptedException;
 
     List<TestTool> getTestTools();
+
+    List<Qualification> getQualifications();
 }

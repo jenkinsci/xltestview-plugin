@@ -43,6 +43,7 @@ import com.sun.jersey.api.client.config.DefaultClientConfig;
 import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
 import com.sun.jersey.core.util.Base64;
 
+import com.xebialabs.xltest.ci.server.domain.Qualification;
 import com.xebialabs.xltest.ci.server.domain.TestTool;
 import hudson.FilePath;
 import hudson.util.DirScanner;
@@ -173,8 +174,38 @@ public class XLTestServerImpl implements XLTestServer {
         return testTools;
     }
 
+    @Override
+    public List<Qualification> getQualifications() {
+        ClientConfig config = new DefaultClientConfig();
+        Client client = Client.create(config);
+        client.addFilter(new HTTPBasicAuthFilter(user, password));
+        WebResource service = client.resource(serverUrl + "/qualifications");
+
+        ClientResponse response = service.path("/").accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
+
+        List<Qualification> result = new ArrayList<>();
+        result.add(new Qualification(null, "default")); // xl-test will figure out by event types when
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            List<String> qualificationTypes = mapper.readValue(response.getEntityInputStream(), List.class);
+            for (String qualificationType : qualificationTypes) {
+                result.add(new Qualification(qualificationType, qualificationType));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
     private void addRequestParameters(UriBuilder builder, Map<String, String> buildVariables) {
         for (Map.Entry<String, String> entry : buildVariables.entrySet()) {
+            if ("qualification".equals(entry.getKey())) {
+                String value = entry.getValue();
+                if (!"default".equals(value)) {
+                    builder.queryParam(entry.getKey(), value);
+                }
+                continue;
+            }
             builder.queryParam(entry.getKey(), entry.getValue());
         }
     }

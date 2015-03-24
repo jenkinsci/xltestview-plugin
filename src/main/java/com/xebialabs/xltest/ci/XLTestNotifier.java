@@ -25,6 +25,7 @@ package com.xebialabs.xltest.ci;
 import com.google.common.base.Strings;
 import com.xebialabs.xltest.ci.server.XLTestServer;
 import com.xebialabs.xltest.ci.server.XLTestServerFactory;
+import com.xebialabs.xltest.ci.server.domain.Qualification;
 import com.xebialabs.xltest.ci.server.domain.TestTool;
 import hudson.Extension;
 import hudson.FilePath;
@@ -61,13 +62,15 @@ public class XLTestNotifier extends Notifier {
     // properties needed to create a TestSpecification at the XL Test server end
     public final String tool;
     public final String pattern;
+    public final String qualification;
     public final String credential;
 
     @DataBoundConstructor
-    public XLTestNotifier(String tool, String pattern, String credential) {
+    public XLTestNotifier(String tool, String pattern, String credential, String qualification) {
         this.tool = tool;
         this.pattern = pattern;
         this.credential = credential;
+        this.qualification = qualification;
     }
 
     public BuildStepMonitor getRequiredMonitorService() {
@@ -103,6 +106,7 @@ public class XLTestNotifier extends Notifier {
         queryParams.put("slave", slave);
         queryParams.put("buildNumber", Integer.toString(buildNumber));
         queryParams.put("jobResult", jobResult);
+        queryParams.put("qualificationType", qualification);
         queryParams.putAll(build.getBuildVariables());
         listener.getLogger().println("[XL Test] Sending back results to XL Test " + buildNumber + "; " + queryParams);
         getXLTestServer().sendBackResults(workspace, jobName, pattern, queryParams, listener.getLogger());
@@ -189,8 +193,19 @@ public class XLTestNotifier extends Notifier {
         public ListBoxModel doFillToolItems() {
             List<TestTool> testTools = getFirstXLTestServer().getTestTools();
             ListBoxModel m = new ListBoxModel();
+
             for (TestTool testTool : testTools) {
                 m.add(testTool.getName(), testTool.getName());
+            }
+            return m;
+        }
+
+        public ListBoxModel doFillQualificationItems() {
+            List<Qualification> qualifications = getFirstXLTestServer().getQualifications();
+            ListBoxModel m = new ListBoxModel();
+
+            for (Qualification qualification : qualifications) {
+                m.add(qualification.getName(), qualification.getName());
             }
             return m;
         }

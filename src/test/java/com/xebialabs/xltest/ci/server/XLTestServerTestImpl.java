@@ -22,6 +22,7 @@
  */
 package com.xebialabs.xltest.ci.server;
 
+import com.xebialabs.xltest.ci.server.domain.Qualification;
 import com.xebialabs.xltest.ci.server.domain.TestTool;
 import hudson.FilePath;
 import org.slf4j.Logger;
@@ -69,6 +70,11 @@ public class XLTestServerTestImpl implements XLTestServer {
 
     @Override
     public List<TestTool> getTestTools() {
+        return null;
+    }
+
+    @Override
+    public List<Qualification> getQualifications() {
         return null;
     }
 
