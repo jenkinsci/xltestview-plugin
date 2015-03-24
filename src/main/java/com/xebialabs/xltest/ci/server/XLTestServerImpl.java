@@ -201,7 +201,7 @@ public class XLTestServerImpl implements XLTestServer {
         for (Map.Entry<String, String> entry : buildVariables.entrySet()) {
             if ("qualificationType".equals(entry.getKey())) {
                 String value = entry.getValue();
-                if (!"default".equals(value)) {
+                if (!"default".equals(value) && value != null) {
                     builder.queryParam(entry.getKey(), value);
                 }
                 continue;
