@@ -199,7 +199,7 @@ public class XLTestServerImpl implements XLTestServer {
 
     private void addRequestParameters(UriBuilder builder, Map<String, String> buildVariables) {
         for (Map.Entry<String, String> entry : buildVariables.entrySet()) {
-            if ("qualification".equals(entry.getKey())) {
+            if ("qualificationType".equals(entry.getKey())) {
                 String value = entry.getValue();
                 if (!"default".equals(value)) {
                     builder.queryParam(entry.getKey(), value);
