@@ -22,21 +22,10 @@
  */
 package com.xebialabs.xltest.ci;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.*;
-import java.util.logging.Logger;
-
-import com.xebialabs.xltest.ci.server.domain.TestTool;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.StaplerRequest;
 import com.google.common.base.Strings;
-
 import com.xebialabs.xltest.ci.server.XLTestServer;
 import com.xebialabs.xltest.ci.server.XLTestServerFactory;
-
+import com.xebialabs.xltest.ci.server.domain.TestTool;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -50,13 +39,21 @@ import hudson.tasks.Publisher;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import net.sf.json.JSONObject;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.StaplerRequest;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Logger;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.collect.Lists.newArrayList;
-import static com.google.common.collect.Maps.newHashMap;
-import static hudson.util.FormValidation.error;
-import static hudson.util.FormValidation.ok;
-import static hudson.util.FormValidation.warning;
+import static hudson.util.FormValidation.*;
 
 public class XLTestNotifier extends Notifier {
     private final static Logger LOGGER = Logger.getLogger(XLTestNotifier.class.getName());
@@ -64,7 +61,6 @@ public class XLTestNotifier extends Notifier {
     // properties needed to create a TestSpecification at the XL Test server end
     public final String tool;
     public final String pattern;
-
     public final String credential;
 
     @DataBoundConstructor
@@ -100,7 +96,7 @@ public class XLTestNotifier extends Notifier {
         String slave = build.getBuiltOn().getDisplayName();
         int buildNumber = build.getNumber();
         String jobResult = build.getResult().toString().toLowerCase();
-        Map<String, String> queryParams = new LinkedHashMap<>();
+        Map<String, String> queryParams = new LinkedHashMap<String, String>();
         queryParams.put("tool", tool);
         queryParams.put("pattern", pattern);
         queryParams.put("jenkinsUrl", hudsonUrl);
@@ -131,27 +127,12 @@ public class XLTestNotifier extends Notifier {
         private String xlTestServerUrl;
         private String xlTestClientProxyUrl;
 
-        private List<Credential> credentials = newArrayList();
-
-        // ************ OTHER NON-SERIALIZABLE PROPERTIES *********** //
-
-        private final transient Map<String, XLTestServer> credentialServerMap = newHashMap();
+        private List<Credential> credentials = new ArrayList<Credential>();
 
         // Executed on start-up of the application...
         public XLTestDescriptor() {
             load();  //deserialize from xml
             LOGGER.info("Loading credentials... This may take a while");
-            mapCredentialsByName();
-        }
-
-        private void mapCredentialsByName() {
-            for (Credential credential : credentials) {
-                String serverUrl = credential.resolveServerUrl(xlTestServerUrl);
-                String proxyUrl = credential.resolveProxyUrl(xlTestClientProxyUrl);
-
-                credentialServerMap.put(credential.name,
-                        XLTestServerFactory.newInstance(serverUrl, proxyUrl, credential.username, credential.password != null ? credential.password.getPlainText() : ""));
-            }
         }
 
         @Override
@@ -161,7 +142,6 @@ public class XLTestNotifier extends Notifier {
             xlTestClientProxyUrl = json.get("xlTestClientProxyUrl").toString();
             credentials = req.bindJSONToList(Credential.class, json.get("credentials"));
             save();  //serialize to xml
-            mapCredentialsByName();
             return true;
         }
 
@@ -185,17 +165,6 @@ public class XLTestNotifier extends Notifier {
             }
             return ok();
 
-        }
-
-        public FormValidation doCheckXLTestServerUrl(@QueryParameter String xlTestServerUrl) {
-            if (Strings.isNullOrEmpty(xlTestServerUrl)) {
-                return error("Url required.");
-            }
-            return validateOptionalUrl(xlTestServerUrl);
-        }
-
-        public FormValidation doCheckXLTestClientProxyUrl(@QueryParameter String xlTestClientProxyUrl) {
-            return validateOptionalUrl(xlTestClientProxyUrl);
         }
 
         public List<Credential> getCredentials() {
@@ -235,20 +204,25 @@ public class XLTestNotifier extends Notifier {
             return super.newInstance(req, formData);
         }
 
-
         private XLTestServer getFirstXLTestServer() {
-            Set<String> keys = credentialServerMap.keySet();
-            if (keys.size() == 0) {
-                throw new RuntimeException("No credentials defined in the system configuration");
+            return getXLTestServer(getDefaultCredential());
+        }
+
+        private XLTestServer getXLTestServer(String credentialName) {
+            checkNotNull(credentialName);
+            for (Credential credential : credentials) {
+                if (credentialName.equals(credential.getName())) {
+                    return getXLTestServer(credential);
+                }
             }
-            return getXLTestServer(keys.toArray(new String[keys.size()])[0]);
+            throw new IllegalArgumentException("No XL Test server credentials found for " + credentialName);
         }
 
-        private XLTestServer getXLTestServer(String credential) {
-            checkNotNull(credential);
-            return credentialServerMap.get(credential);
+        private XLTestServer getXLTestServer(Credential credential) {
+            String serverUrl = credential.resolveServerUrl(xlTestServerUrl);
+            String proxyUrl = credential.resolveProxyUrl(xlTestClientProxyUrl);
+            return XLTestServerFactory.newInstance(serverUrl, proxyUrl, credential.username, credential.password != null ? credential.password.getPlainText() : "");
         }
-
 
         private Credential getDefaultCredential() {
             if (credentials.isEmpty())

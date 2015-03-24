@@ -22,34 +22,26 @@
  */
 package com.xebialabs.xltest.ci;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.QueryParameter;
-import com.google.common.base.Function;
 import com.google.common.base.Strings;
-
 import com.xebialabs.xltest.ci.server.XLTestServer;
 import com.xebialabs.xltest.ci.server.XLTestServerFactory;
-
 import hudson.Extension;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.util.FormValidation;
 import hudson.util.Secret;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 import static hudson.util.FormValidation.error;
 import static hudson.util.FormValidation.ok;
 
 public class Credential extends AbstractDescribableImpl<Credential> {
 
-    public static final Function<Credential, String> CREDENTIAL_INDEX = new Function<Credential, String>() {
-        public String apply(Credential input) {
-            return input.getName();
-        }
-    };
     public final String name;
     public final String username;
     public final Secret password;
@@ -208,8 +200,7 @@ public class Credential extends AbstractDescribableImpl<Credential> {
 
 
         public FormValidation doValidate(@QueryParameter String xlTestServerUrl, @QueryParameter String xlTestClientProxyUrl, @QueryParameter String username,
-                                         @QueryParameter Secret password, @QueryParameter String secondaryServerUrl, @QueryParameter String secondaryProxyUrl, 
-                                         @QueryParameter String jenkinsHost, @QueryParameter int jenkinsPort) throws IOException {
+                                         @QueryParameter Secret password, @QueryParameter String secondaryServerUrl, @QueryParameter String secondaryProxyUrl) throws IOException {
             try {
                 String serverUrl = Strings.isNullOrEmpty(secondaryServerUrl) ? xlTestServerUrl : secondaryServerUrl;
                 String proxyUrl = Strings.isNullOrEmpty(secondaryProxyUrl) ? xlTestClientProxyUrl : secondaryProxyUrl;
