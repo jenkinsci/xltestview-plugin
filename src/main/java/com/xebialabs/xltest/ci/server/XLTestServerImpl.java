@@ -181,17 +181,17 @@ public class XLTestServerImpl implements XLTestServer {
         client.addFilter(new HTTPBasicAuthFilter(user, password));
         WebResource service = client.resource(serverUrl + "/qualifications");
 
-        ClientResponse response = service.path("/").accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
-
         List<Qualification> result = new ArrayList<>();
-        result.add(new Qualification(null, "default")); // xl-test will figure out by event types when
-        ObjectMapper mapper = new ObjectMapper();
+        result.add(new Qualification(null, "default")); // default option is 'null' (which xl-test makes fall back to default behaviour)
+
         try {
+            ClientResponse response = service.path("/").accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
+            ObjectMapper mapper = new ObjectMapper();
             List<String> qualificationTypes = mapper.readValue(response.getEntityInputStream(), List.class);
             for (String qualificationType : qualificationTypes) {
                 result.add(new Qualification(qualificationType, qualificationType));
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return result;
