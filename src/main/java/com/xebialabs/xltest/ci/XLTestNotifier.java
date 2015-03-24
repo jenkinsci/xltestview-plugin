@@ -222,6 +222,7 @@ public class XLTestNotifier extends Notifier {
             m.add("FitNesse", "FitNesse");
             m.add("Cucumber", "Cucumber");
             m.add("xUnit", "xUnit");
+            m.add("JMeter", "JMeter");
             return m;
         }
 
