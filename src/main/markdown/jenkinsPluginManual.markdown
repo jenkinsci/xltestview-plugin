@@ -1,9 +1,10 @@
 ## Preface ##
 
-This document describes the functionality provided by **XL Release Jenkins Plugin**.
+This document describes the functionality provided by **XL Test Jenkins Plugin**.
 
 ## Overview ##
-The **XL Release Jenkins Plugin** enables 2 post-build actions: "Create a release from a template" and "Start a release" which can be combined sequentially.
+
+The **XL Test Jenkins Plugin** provides a post-build action that allows you to send test results to XL Test.
 
 ### Features ###
 
@@ -15,15 +16,7 @@ The **XL Release Jenkins Plugin** enables 2 post-build actions: "Create a releas
 ### Requirements ###
 
 * **Jenkins**: Jenkins **LTS** version {{supportedLtsVersion}} or higher.
-
-### Create a release from a template ###
-
-Creates a release from a template that was defined in XL Release. You can also specify the variables that are contained in the template.
-
-### Start a release ###
-
-If checked, the created release will directly be started.
-
+* **XL Test**: Grab a copy from http://xebialabs.com/products/xl-test.
 
 ## Configuration ##
 
@@ -31,16 +24,10 @@ There are 2 places to configure the **XL Release Jenkins Plugin**: global Jenkin
 
 ### Plugin configuration ###
 
-At *Manage Jenkins* -> *Configure System* you can specify XL Release server URL and one or more sets of credentials. Different sets can be used for different jobs.
+At *Manage Jenkins* -> *Configure System* you can specify the XL Test server URL and one or more sets of credentials. Different sets can be used for different jobs.
 
 ### Job configuration ###
 
-In the Job Configuration page, choose *Post-build Actions* -> *Add post-build action* -> *Release with XL Release*. Now you can configure which actions to perform and other settings. To get an explanation of each setting, click on the question mark sign located right next to each setting.
-
-##How do I ...?##
-
-**Generate version of my application automatically?**
-
-If you practice continuous delivery, it may be useful to increase the version automatically after each build. For this you can use one of Jenkins environment variables in the Version field. For example ${BUILD_NUMBER}. To see the complete list of available variables you can go to http://\<jenkins-host\>:\<jenkins-port\>/env-vars.html
+In the Job Configuration page, choose *Post-build Actions* -> *Add post-build action* -> *Send test results to XL Test*. Specify the tool used to perform the testing and a file pattern -- this will save bandwidth as the results files are sent to XL Test for analysis.
 
 ## Release notes ##
