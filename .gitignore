@@ -10,5 +10,5 @@ target/
 work
 .Xauthority*
 .gradle
-bin/
+/bin
 .idea
