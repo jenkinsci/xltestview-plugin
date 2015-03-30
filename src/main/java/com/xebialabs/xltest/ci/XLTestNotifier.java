@@ -90,13 +90,15 @@ public class XLTestNotifier extends Notifier {
      */
     @Override
     public boolean perform(final AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
-
-        String jobName = (build.getProject()).getName();
+        // Use full name for folder plugin
+        String jobName = build.getProject().getFullName();
         // perhaps we need the build number later??? Use e.g. build.getUrl(); which returns something like job/foo/32
         // String rootUrlAsString = Jenkins.getInstance().getRootUrl(); // gives http://localhost/jenkins or whatever was specified
 
         FilePath workspace = build.getWorkspace();
+        // TODO: why use environment variable? In stead of Jenkins.getInstance().getRootUrl()
         String hudsonUrl = build.getEnvironment(listener).get("HUDSON_URL");
+        // TODO: why not nodename, which is a 'technical' name in stead of a display name ?
         String slave = build.getBuiltOn().getDisplayName();
         int buildNumber = build.getNumber();
         String jobResult = build.getResult().toString().toLowerCase();
@@ -108,6 +110,7 @@ public class XLTestNotifier extends Notifier {
         queryParams.put("buildNumber", Integer.toString(buildNumber));
         queryParams.put("jobResult", jobResult);
         queryParams.put("qualificationType", qualification);
+        // TODO: this may interfere with the previous variables
         queryParams.putAll(build.getBuildVariables());
         listener.getLogger().println("[XL Test] Sending back results to XL Test " + buildNumber + "; " + queryParams);
         getXLTestServer().sendBackResults(workspace, jobName, pattern, queryParams, listener.getLogger());
@@ -256,7 +259,5 @@ public class XLTestNotifier extends Notifier {
                 throw new RuntimeException("No credentials defined in the system configuration");
             return credentials.iterator().next();
         }
-
-
     }
 }
