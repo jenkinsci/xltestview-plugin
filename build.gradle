@@ -44,6 +44,10 @@ apply plugin: 'idea'
 group = "com.xebialabs.xltest.ci"
 description = "Aggregate your test results in &lt;a href='http://www.xebialabs.com'&gt;XebiaLabs XL Test&lt;/a&gt;."
 
+// starting with jenkins 1.608 this should move to 1.7
+sourceCompatibility = '1.6'
+targetCompatibility = '1.6'
+
 com.xebialabs.gradle.plugins.release.util.VersionUtil.setVersion(project)
 
 if (project.rootProject == project) {
@@ -130,10 +134,11 @@ configurations {
 }
 
 dependencies {
+    compile "org.slf4j:slf4j-api:1.7.5"
+
     compile "com.sun.jersey:jersey-client:1.18"
     compile "com.sun.jersey:jersey-core:1.18"
     compile "com.sun.jersey:jersey-json:1.18"
-    compile "org.slf4j:slf4j-api:1.7.5"
 
     compile 'com.google.code.findbugs:jsr305:2.0.2'
     compile 'findbugs:annotations:1.0.0'

@@ -1,40 +1,28 @@
 /**
  * Copyright (c) 2014-2015, XebiaLabs B.V., All rights reserved.
- *
+ * <p/>
  * The XL Test plugin for Jenkins is licensed under the terms of the GPLv2
  * <http://www.gnu.org/licenses/old-licenses/gpl-2.0.html>, like most XebiaLabs
  * Libraries. There are special exceptions to the terms and conditions of the
  * GPLv2 as it is applied to this software, see the FLOSS License Exception
  * <https://github.com/jenkinsci/xltest-plugin/blob/master/LICENSE>.
- *
+ * <p/>
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
  * Free Software Foundation; version 2 of the License.
- *
+ * <p/>
  * This program is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
  * more details.
- *
+ * <p/>
  * You should have received a copy of the GNU General Public License along with
  * this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 package com.xebialabs.xltest.ci.server;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.UriBuilder;
+import com.google.common.collect.Lists;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
@@ -42,14 +30,29 @@ import com.sun.jersey.api.client.config.ClientConfig;
 import com.sun.jersey.api.client.config.DefaultClientConfig;
 import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
 import com.sun.jersey.core.util.Base64;
-
 import com.xebialabs.xltest.ci.server.domain.Qualification;
 import com.xebialabs.xltest.ci.server.domain.TestTool;
 import hudson.FilePath;
 import hudson.util.DirScanner;
 import hudson.util.DirScanner.Glob;
 import hudson.util.io.ArchiverFactory;
+import org.apache.commons.io.IOUtils;
 import org.codehaus.jackson.map.ObjectMapper;
+
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.UriBuilder;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static org.apache.commons.io.IOUtils.closeQuietly;
 
 public class XLTestServerImpl implements XLTestServer {
 
@@ -60,14 +63,12 @@ public class XLTestServerImpl implements XLTestServer {
     private String proxyUrl;
     private String serverUrl;
 
-
     XLTestServerImpl(String serverUrl, String proxyUrl, String username, String password) {
         this.user = username;
         this.password = password;
         this.proxyUrl = proxyUrl;
         this.serverUrl = serverUrl + "/api/internal";
     }
-
 
     @Override
     public void checkConnection() {
@@ -98,7 +99,7 @@ public class XLTestServerImpl implements XLTestServer {
     }
 
     @Override
-    public void sendBackResults(FilePath workspace,  String jobName, String pattern, Map<String, String> queryParameters, PrintStream logger) throws IOException, InterruptedException {
+    public void sendBackResults(FilePath workspace, String jobName, String pattern, Map<String, String> queryParameters, PrintStream logger) throws IOException, InterruptedException {
         UriBuilder builder = UriBuilder.fromPath(serverUrl).path("/import/{arg1}");
         addRequestParameters(builder, queryParameters);
         URL feedbackUrl = builder.build(jobName).toURL();
@@ -124,9 +125,13 @@ public class XLTestServerImpl implements XLTestServer {
             LOGGER.info("Going to scan dir: " + workspace.getRemote() + " for files to zip using pattern: " + pattern);
 
             int numberOfFilesArchived;
-            try (OutputStream os = connection.getOutputStream()) {
+            OutputStream os = null;
+            try {
+                os = connection.getOutputStream();
                 numberOfFilesArchived = workspace.archive(factory, os, scanner);
                 os.flush();
+            } finally {
+                closeQuietly(os);
             }
 
             // Need this to trigger the sending of the request
@@ -159,7 +164,7 @@ public class XLTestServerImpl implements XLTestServer {
 
         ClientResponse response = service.path("/").accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
 
-        List<TestTool> testTools = new ArrayList<>();
+        List<TestTool> testTools = Lists.newArrayList();
 
         ObjectMapper mapper = new ObjectMapper();
         try {
@@ -181,7 +186,7 @@ public class XLTestServerImpl implements XLTestServer {
         client.addFilter(new HTTPBasicAuthFilter(user, password));
         WebResource service = client.resource(serverUrl + "/qualifications");
 
-        List<Qualification> result = new ArrayList<>();
+        List<Qualification> result = Lists.newArrayList();
         result.add(new Qualification(null, "default")); // default option is 'null' (which xl-test makes fall back to default behaviour)
 
         try {
