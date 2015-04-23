@@ -120,6 +120,10 @@ configurations {
     providedRuntime.exclude group: 'jdom', module: 'jdom' //Engine packager requires JDOM2. Exclude from config so that it is included in the hpi Web-Inf lib.
     providedRuntime.exclude group: 'de.schlichtherle.truezip', module: 'truezip-path' // needs Java7, borks on Java6 setups
     all*.exclude group: 'com.thoughtworks.xstream', module: 'xstream'
+
+    // obscure artifact that is referenced somewhere from test configurations, but seems to not exist anymore
+    all*.exclude group: 'org.jenkins-ci.main', module: 'ui-samples-plugin'
+
     // this artifact lives in a netbeans repository which behaves flakey
     // it's not used so exclude it.
     testCompile.exclude group: 'org.netbeans.modules', module: 'org-netbeans-insane'
