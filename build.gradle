@@ -121,9 +121,6 @@ if(project.hasProperty('nexusBaseUrl')) {
 
 configurations {
     compile.transitive = true
-    providedRuntime.exclude group: 'jdom', module: 'jdom' //Engine packager requires JDOM2. Exclude from config so that it is included in the hpi Web-Inf lib.
-    providedRuntime.exclude group: 'de.schlichtherle.truezip', module: 'truezip-path' // needs Java7, borks on Java6 setups
-    all*.exclude group: 'com.thoughtworks.xstream', module: 'xstream'
 
     // obscure artifact that is referenced somewhere from test configurations, but seems to not exist anymore
     all*.exclude group: 'org.jenkins-ci.main', module: 'ui-samples-plugin'
