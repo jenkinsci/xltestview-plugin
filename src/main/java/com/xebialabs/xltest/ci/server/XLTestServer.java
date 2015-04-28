@@ -35,10 +35,8 @@ public interface XLTestServer {
     void checkConnection();
 
     Object getVersion();
-    
-    void sendBackResults(FilePath workspace, String jobName, String pattern, Map<String, String> queryParameters, PrintStream logger) throws IOException, InterruptedException;
+
+    void sendBackResults(FilePath workspace, PrintStream logger) throws IOException, InterruptedException;
 
     List<TestTool> getTestTools();
-
-    List<Qualification> getQualifications();
 }

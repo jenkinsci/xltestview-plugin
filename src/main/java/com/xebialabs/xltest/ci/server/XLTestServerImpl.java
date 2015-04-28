@@ -22,6 +22,7 @@
  */
 package com.xebialabs.xltest.ci.server;
 
+import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.google.common.collect.Lists;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
@@ -30,13 +31,12 @@ import com.sun.jersey.api.client.config.ClientConfig;
 import com.sun.jersey.api.client.config.DefaultClientConfig;
 import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
 import com.sun.jersey.core.util.Base64;
-import com.xebialabs.xltest.ci.server.domain.Qualification;
 import com.xebialabs.xltest.ci.server.domain.TestTool;
 import hudson.FilePath;
 import hudson.util.DirScanner;
 import hudson.util.DirScanner.Glob;
+import hudson.util.Secret;
 import hudson.util.io.ArchiverFactory;
-import org.apache.commons.io.IOUtils;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import javax.ws.rs.core.MediaType;
@@ -46,7 +46,6 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -58,14 +57,14 @@ public class XLTestServerImpl implements XLTestServer {
 
     private final static Logger LOGGER = Logger.getLogger(XLTestServerImpl.class.getName());
     public static final String XL_TEST_LOG_PREFIX = "[XL Test]";
-    private String user;
-    private String password;
+
     private String proxyUrl;
     private String serverUrl;
 
-    XLTestServerImpl(String serverUrl, String proxyUrl, String username, String password) {
-        this.user = username;
-        this.password = password;
+    private StandardUsernamePasswordCredentials credentials;
+
+    XLTestServerImpl(String serverUrl, String proxyUrl, StandardUsernamePasswordCredentials credentials) {
+        this.credentials = credentials;
         this.proxyUrl = proxyUrl;
         this.serverUrl = serverUrl + "/api/internal";
     }
@@ -75,6 +74,10 @@ public class XLTestServerImpl implements XLTestServer {
         // setup REST-Client
         ClientConfig config = new DefaultClientConfig();
         Client client = Client.create(config);
+
+        String user = getUsername();
+        String password = getPassword();
+
         client.addFilter(new HTTPBasicAuthFilter(user, password));
         WebResource service = client.resource(serverUrl);
 
@@ -89,7 +92,6 @@ public class XLTestServerImpl implements XLTestServer {
                 throw new IllegalStateException("URL is invalid or server is not running");
             default:
                 throw new IllegalStateException("Unknown error. Status code: " + response.getStatus() + ". Response message: " + response.toString());
-
         }
     }
 
@@ -99,15 +101,19 @@ public class XLTestServerImpl implements XLTestServer {
     }
 
     @Override
-    public void sendBackResults(FilePath workspace, String jobName, String pattern, Map<String, String> queryParameters, PrintStream logger) throws IOException, InterruptedException {
+    public void sendBackResults(FilePath workspace, PrintStream logger) throws IOException, InterruptedException {
         UriBuilder builder = UriBuilder.fromPath(serverUrl).path("/import/{arg1}");
-        addRequestParameters(builder, queryParameters);
-        URL feedbackUrl = builder.build(jobName).toURL();
+        //addRequestParameters(builder, queryParameters);
+        URL feedbackUrl = builder.build("testspecidgoeshere").toURL();
+
+        String user = getUsername();
+        String password = getPassword();
 
         HttpURLConnection connection = null;
         try {
             log(logger, Level.INFO, "Trying to send workspace: " + workspace.toURI().toString() + " to XL Test on URL: " + feedbackUrl.toString());
             LOGGER.info("Trying to send workspace: " + workspace.toURI().toString() + " to XL Test on URL: " + feedbackUrl.toString());
+
             connection = (HttpURLConnection) feedbackUrl.openConnection();
             connection.setDoOutput(true);
             connection.setDoInput(true);
@@ -120,6 +126,9 @@ public class XLTestServerImpl implements XLTestServer {
             connection.setRequestMethod("POST");
             connection.setRequestProperty("Content-Type", "application/zip");
             ArchiverFactory factory = ArchiverFactory.ZIP;
+
+            // TODO: pattern + I don't get the logic behind what's passed into Glob
+            String pattern = "**/*.xml";
             DirScanner scanner = new Glob(pattern + "," + pattern + "/**", null); // no excludes supported (yet)
             log(logger, Level.INFO, "Going to scan dir: " + workspace.getRemote() + " for files to zip using pattern: " + pattern);
             LOGGER.info("Going to scan dir: " + workspace.getRemote() + " for files to zip using pattern: " + pattern);
@@ -159,6 +168,10 @@ public class XLTestServerImpl implements XLTestServer {
     public List<TestTool> getTestTools() {
         ClientConfig config = new DefaultClientConfig();
         Client client = Client.create(config);
+
+        String user = getUsername();
+        String password = getPassword();
+
         client.addFilter(new HTTPBasicAuthFilter(user, password));
         WebResource service = client.resource(serverUrl + "/testtools");
 
@@ -179,27 +192,12 @@ public class XLTestServerImpl implements XLTestServer {
         return testTools;
     }
 
-    @Override
-    public List<Qualification> getQualifications() {
-        ClientConfig config = new DefaultClientConfig();
-        Client client = Client.create(config);
-        client.addFilter(new HTTPBasicAuthFilter(user, password));
-        WebResource service = client.resource(serverUrl + "/qualifications");
+    private String getPassword() {
+        return Secret.toString(credentials.getPassword());
+    }
 
-        List<Qualification> result = Lists.newArrayList();
-        result.add(new Qualification(null, "default")); // default option is 'null' (which xl-test makes fall back to default behaviour)
-
-        try {
-            ClientResponse response = service.path("/").accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
-            ObjectMapper mapper = new ObjectMapper();
-            List<String> qualificationTypes = mapper.readValue(response.getEntityInputStream(), List.class);
-            for (String qualificationType : qualificationTypes) {
-                result.add(new Qualification(qualificationType, qualificationType));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return result;
+    private String getUsername() {
+        return credentials.getUsername();
     }
 
     private void addRequestParameters(UriBuilder builder, Map<String, String> buildVariables) {

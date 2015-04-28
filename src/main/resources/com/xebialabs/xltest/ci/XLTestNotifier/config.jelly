@@ -1,28 +1,10 @@
 <!-- post-build step -->
 <?jelly escape-by-default='true'?>
-<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
-    <f:entry title="${%Credential}" field="credential" help="/plugin/xltest-plugin/help-credential.html">
-        <f:select id="xl-test-pb-credential"/>
+<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
+    <!-- TODO: select box with test specifications
+     once selected display some things like qualification, tooltype etc.
+    -->
+    <f:entry title="${%Pattern}">
+        <f:textbox default="" id="xl-test-pb-pattern"/>
     </f:entry>
-    <f:entry title="${%Tool}" field="tool" help="/plugin/xltest-plugin/help-tool.html">
-		<f:select id="xl-test-pb-tool" onchange="xl_test_update_tool_pattern(this)"/>
-    </f:entry>
-    <f:entry title="${%Pattern}" field="pattern" help="/plugin/xltest-plugin/help-pattern.html">
-    	<f:textbox default="" id="xl-test-pb-pattern"/>
-    </f:entry>
-    <f:entry title="${%Qualification}" field="qualification" help="/plugin/xltest-plugin/help-qualification.html">
-		<f:select id="xl-test-pb-qualification"/>
-    </f:entry>
-
-    <script>
-        function xl_test_update_tool_pattern(tool) {
-            var binding = <st:bind value="${descriptor}"/>;
-            var pattern = document.getElementById('xl-test-pb-pattern');
-
-            binding.defaultPattern(tool.value, function(t) {
-                var p = t.responseObject();
-                pattern.value = p;
-            });
-        }
-    </script>
 </j:jelly>

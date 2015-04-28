@@ -1,25 +1,24 @@
 <?jelly escape-by-default='true'?>
-<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+<j:jelly xmlns:j="jelly:core"
+         xmlns:f="/lib/form" xmlns:c="/lib/credentials">
+
+    <!-- Global configuration -->
     <f:section title="XL Test">
-        <f:entry title="${%Default Server Url}" field="xlTestServerUrl">
+
+        <f:entry title="${%Server Url}" field="serverUrl">
             <f:textbox default="http://myXLTestHost:6516"/>
         </f:entry>
-        <f:entry title="${%Default Proxy Url}" field="xlTestClientProxyUrl">
+
+        <f:entry title="${%Proxy Url}" field="proxyUrl">
             <f:textbox/>
         </f:entry>
 
-        <f:entry title="Credentials" field="credentials">
-            <f:repeatable field="credentials" minimum="${1}">
-                <table style="width:100%">
-                    <st:include from="${descriptor}" page="${descriptor.configPage}"/>
-                    <f:entry>
-                        <div align="right">
-                            <f:repeatableDeleteButton/>
-                        </div>
-                    </f:entry>
-                </table>
-            </f:repeatable>
+        <f:entry title="${%Credentials}" field="credentialsId">
+            <c:select/>
         </f:entry>
+
+        <f:validateButton title="${%Test Connection}" progress="${%Testing...}"
+                method="testConnection" with="serverUrl,proxyUrl,credentialsId" />
 
     </f:section>
 </j:jelly>

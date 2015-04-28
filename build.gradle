@@ -133,6 +133,8 @@ configurations {
 dependencies {
     compile "org.slf4j:slf4j-api:1.7.5"
 
+    compile 'org.jenkins-ci.plugins:credentials:1.9.4@jar'
+
     compile "com.sun.jersey:jersey-client:1.18"
     compile "com.sun.jersey:jersey-core:1.18"
     compile "com.sun.jersey:jersey-json:1.18"
