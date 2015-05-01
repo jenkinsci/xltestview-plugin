@@ -5,16 +5,26 @@ import com.squareup.okhttp.mockwebserver.MockWebServer;
 import com.squareup.okhttp.mockwebserver.RecordedRequest;
 import com.xebialabs.xltest.ci.server.authentication.UsernamePassword;
 import com.xebialabs.xltest.ci.server.domain.TestSpecification;
+import hudson.FilePath;
+import jenkins.model.Jenkins;
 import org.mockito.Mockito;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import javax.mail.BodyPart;
+import javax.mail.internet.MimeMultipart;
+import javax.mail.util.ByteArrayDataSource;
+import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 
 public class XLTestServerImplTest {
     // TODO: this is from the demo data and not 'the whole truth'
@@ -72,10 +82,45 @@ public class XLTestServerImplTest {
     }
 
     @Test
-    public void shouldImport() {
+    public void shouldImport() throws Exception {
         xltStub.enqueue(new MockResponse()
                 .addHeader("Content-Type", "application/json; charset=utf-8")
-                .setBody(TEST_SPEC_RESPONSE));
+                .setBody("{ \"testRunId\": \"testrunid\" }"));
+        FilePath fp = new FilePath(new File("."));
 
+        PrintStream logger = new PrintStream(System.out);
+
+        Map<String, Object> metadata = new LinkedHashMap<String, Object>();
+        metadata.put("source", "jenkins");
+        metadata.put("serverUrl", "http://my-jenkins");
+        metadata.put("buildResult", "success");
+        metadata.put("buildNumber", "10");
+        metadata.put("jobUrl", "http://my-jenkins/job/sub-dir/my-job");
+        metadata.put("jobName", "sub-dir/my-job");
+        metadata.put("buildUrl", "http://my-jenkins/job/test/14");
+        metadata.put("executedOn", "slave1");
+        metadata.put("buildParameters", new HashMap());
+
+        xlTestServer.uploadTestRun("testspecid", fp, "**/*.xml", null, metadata, logger);
+
+        RecordedRequest request = xltStub.takeRequest();
+        assertEquals(request.getRequestLine(), "POST /api/internal/import/testspecid HTTP/1.1");
+        assertEquals(request.getHeader("accept"), "application/json; charset=utf-8");
+        assertEquals(request.getHeader("authorization"), "Basic YWRtaW46YWRtaW4=");
+        assertTrue(request.getBodySize() > 0);
+
+        ByteArrayDataSource bads = new ByteArrayDataSource(request.getBody().inputStream(), "multipart/mixed");
+        MimeMultipart mp = new MimeMultipart(bads);
+        assertTrue(request.getBodySize() > 0);
+
+        assertEquals(mp.getCount(), 2);
+        assertEquals(mp.getContentType(), "multipart/mixed");
+
+        // TODO could do additional checks on metadata content
+        BodyPart bodyPart1 = mp.getBodyPart(0);
+        assertEquals(bodyPart1.getContentType(), "application/json; charset=utf-8");
+
+        BodyPart bodyPart2 = mp.getBodyPart(1);
+        assertEquals(bodyPart2.getContentType(), "application/zip");
     }
 }

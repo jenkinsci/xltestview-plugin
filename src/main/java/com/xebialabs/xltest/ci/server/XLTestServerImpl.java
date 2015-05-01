@@ -25,22 +25,25 @@ package com.xebialabs.xltest.ci.server;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.squareup.okhttp.Credentials;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.Response;
+import com.squareup.okhttp.*;
 import com.xebialabs.xltest.ci.server.authentication.UsernamePassword;
 import com.xebialabs.xltest.ci.server.domain.TestSpecification;
 import hudson.FilePath;
 import hudson.util.DirScanner;
+import hudson.util.io.ArchiverFactory;
+import okio.BufferedSink;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.*;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.lang.String.format;
+import static org.apache.commons.io.IOUtils.closeQuietly;
 
 public class XLTestServerImpl implements XLTestServer {
     private final static Logger LOGGER = Logger.getLogger(XLTestServerImpl.class.getName());
@@ -52,6 +55,7 @@ public class XLTestServerImpl implements XLTestServer {
     public static final String API_CONNECTION_CHECK = "/api/internal/data";
     public static final String API_TESTSPECIFICATIONS_EXTENDED = "/api/internal/testspecifications/extended";
     public static final String API_IMPORT = "/api/internal/import";
+    public static final String APPLICATION_JSON_UTF_8 = "application/json; charset=utf-8";
 
     private OkHttpClient client = new OkHttpClient();
 
@@ -62,6 +66,9 @@ public class XLTestServerImpl implements XLTestServer {
 
     XLTestServerImpl(String serverUrl, String proxyUrl, UsernamePassword credentials) {
         this.serverUrl = URI.create(serverUrl);
+        if (credentials == null) {
+            throw new IllegalArgumentException("Need credentials to connect to " + serverUrl);
+        }
         this.credentials = credentials;
         this.proxyUrl = proxyUrl != null && !proxyUrl.isEmpty() ? URI.create(proxyUrl) : null;
         setupHttpClient();
@@ -81,11 +88,11 @@ public class XLTestServerImpl implements XLTestServer {
 
     private Request createRequestFor(String relativeUrl) {
         try {
-            URL url = new URI(serverUrl.toString() + relativeUrl).toURL();
+            URL url = createUrl(relativeUrl);
 
             return new Request.Builder()
                     .url(url)
-                    .header("Accept", "application/json; charset=utf-8")
+                    .header("Accept", APPLICATION_JSON_UTF_8)
                     .header("Authorization", createCredential())
                     .build();
 
@@ -94,6 +101,14 @@ public class XLTestServerImpl implements XLTestServer {
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException(e);
         }
+    }
+
+    private URL createUrl(String relativeUrl) throws MalformedURLException, URISyntaxException {
+        return new URI(serverUrl.toString() + relativeUrl).toURL();
+    }
+
+    private String createCredential() {
+        return Credentials.basic(credentials.getUsername(), credentials.getPassword());
     }
 
     @Override
@@ -118,97 +133,50 @@ public class XLTestServerImpl implements XLTestServer {
         }
     }
 
-    private String createCredential() {
-        return Credentials.basic(credentials.getUsername(), credentials.getPassword());
-    }
-
     @Override
     public Object getVersion() {
         return serverUrl;
     }
 
     @Override
-    public void sendBackResults(FilePath workspace, PrintStream logger) throws IOException, InterruptedException {
-//        try {
-//            LOGGER.info("Uploading results to " + serverUrl);
-//            Request request = createRequestFor(API_IMPORT);
-//
-//            Response response = client.newCall(request).execute();
-//            switch (response.code()) {
-//                case 200:
-//                    return;
-//                case 401:
-//                    throw new IllegalStateException("Credentials are invalid");
-//                case 404:
-//                    throw new IllegalStateException("URL is invalid or server is not running");
-//                default:
-//                    throw new IllegalStateException("Unknown error. Status code: " + response.code() + ". Response message: " + response.toString());
-//            }
-//        } catch (IOException e) {
-//            throw new RuntimeException(e);
-//        }
+    public void uploadTestRun(String testSpecificationId, FilePath workspace, String includes, String excludes, Map<String, Object> metadata, final PrintStream logger) throws InterruptedException {
+        try {
+            log(logger, Level.INFO, format("Trying to send workspace: '%s' to XL Test on URL: '%s'", workspace.toURI().toString(), serverUrl.toString()));
+            log(logger, Level.INFO, format("Going to scan dir: '%s' for files to zip using include pattern: '%s' and exclude pattern '%s'",
+                    workspace.getRemote(), includes, excludes));
 
-//        UriBuilder builder = UriBuilder.fromPath(serverUrl).path("/import/{arg1}");
-//        //addRequestParameters(builder, queryParameters);
-//        URL feedbackUrl = builder.build("testspecidgoeshere").toURL();
-//
-//        String user = getUsername();
-//        String password = getPassword();
-//
-//        HttpURLConnection connection = null;
-//        try {
-//            log(logger, Level.INFO, "Trying to send workspace: " + workspace.toURI().toString() + " to XL Test on URL: " + feedbackUrl.toString());
-//            LOGGER.info("Trying to send workspace: " + workspace.toURI().toString() + " to XL Test on URL: " + feedbackUrl.toString());
-//
-//            connection = (HttpURLConnection) feedbackUrl.openConnection();
-//            connection.setDoOutput(true);
-//            connection.setDoInput(true);
-//            connection.setInstanceFollowRedirects(false);
-//            connection.setUseCaches(false);
-//
-//            String authorization = "Basic " + new String(Base64.encode((user + ":" + password).getBytes()));
-//            connection.setRequestProperty("Authorization", authorization);
-//
-//            connection.setRequestMethod("POST");
-//            connection.setRequestProperty("Content-Type", "application/zip");
-//            ArchiverFactory factory = ArchiverFactory.ZIP;
-//
-//            // TODO: pattern + I don't get the logic behind what's passed into Glob
-//        String pattern = "**/*.xml";
-//        DirScanner scanner = new DirScanner.Glob(pattern + "," + pattern + "/**", null);
-//        // no excludes supported (yet)
-//        log(logger, Level.INFO, "Going to scan dir: " + workspace.getRemote() + " for files to zip using pattern: " + pattern);
-//        LOGGER.info("Going to scan dir: " + workspace.getRemote() + " for files to zip using pattern: " + pattern);
-//
-//            int numberOfFilesArchived;
-//            OutputStream os = null;
-//            try {
-//                os = connection.getOutputStream();
-//                numberOfFilesArchived = workspace.archive(factory, os, scanner);
-//                os.flush();
-//            } finally {
-//                closeQuietly(os);
-//            }
-//
-//            // Need this to trigger the sending of the request
-//            int responseCode = connection.getResponseCode();
-//            log(logger, Level.INFO, "Zip sent containing: " + numberOfFilesArchived + " files. Response code from XL Test was: " + responseCode);
-//            if (responseCode != 200) {
-//                log(logger, Level.INFO, "Response message: " + connection.getResponseMessage());
-//            }
-//        } catch (IOException e) {
-//            log(logger, Level.SEVERE, "Could not deliver page information", e);
-//            LOGGER.log(Level.SEVERE, "Could not deliver page information", e);
-//            throw e;
-//        } catch (InterruptedException e) {
-//            log(logger, Level.SEVERE, "Execution was interrupted", e);
-//            LOGGER.log(Level.SEVERE, "Execution was interrupted", e);
-//            throw e;
-//        } finally {
-//            if (connection != null) {
-//                connection.disconnect();
-//            }
-//        }
+            DirScanner scanner = new DirScanner.Glob(includes, excludes);
+
+            ObjectMapper objectMapper = new ObjectMapper();
+
+            RequestBody body = new MultipartBuilder().type(MultipartBuilder.MIXED)
+                    .addPart(RequestBody.create(MediaType.parse(APPLICATION_JSON_UTF_8), objectMapper.writeValueAsString(metadata)))
+                    .addPart(new ZipRequestBody(workspace, scanner, logger))
+                    .build();
+
+            Request request = new Request.Builder()
+                    .url(createUrl(API_IMPORT + "/" + testSpecificationId))
+                    .header("Accept", APPLICATION_JSON_UTF_8)
+                    .header("Authorization", createCredential())
+                    .post(body)
+                    .build();
+
+            Response response = client.newCall(request).execute();
+            switch (response.code()) {
+                case 200:
+                    return;
+                case 401:
+                    throw new IllegalStateException("Credentials are invalid");
+                case 404:
+                    throw new IllegalStateException("URL is invalid or server is not running");
+                default:
+                    throw new IllegalStateException("Unknown error. Status code: " + response.code() + ". Response message: " + response.toString());
+            }
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException(e);
+        } catch (IOException e) {
+            throw new RuntimeException("I/O error uploading test run data to " + serverUrl.toString(), e);
+        }
     }
 
     private ObjectMapper createMapper() {
@@ -238,9 +206,66 @@ public class XLTestServerImpl implements XLTestServer {
     }
 
     private void log(PrintStream logger, Level level, String message, Exception e) {
+        LOGGER.log(level, message);
         logger.println(XL_TEST_LOG_PREFIX + " [" + level.toString() + "] " + message);
         if (e != null) {
             e.printStackTrace(logger);
+        }
+    }
+
+    private class CloseIgnoringOutputStream extends OutputStream {
+        private final OutputStream wrapped;
+
+        public CloseIgnoringOutputStream(OutputStream wrapped) {
+            this.wrapped = wrapped;
+        }
+
+        @Override
+        public void write(int b) throws IOException {
+            wrapped.write(b);
+        }
+
+        @Override
+        public void close() throws IOException {
+            // let's ignore this...
+        }
+    }
+
+    private class ZipRequestBody extends RequestBody {
+        private final FilePath workspace;
+        private final DirScanner scanner;
+        private final PrintStream logger;
+
+        public ZipRequestBody(FilePath workspace, DirScanner scanner, PrintStream logger) {
+            this.workspace = workspace;
+            this.scanner = scanner;
+            this.logger = logger;
+        }
+
+        @Override
+        public MediaType contentType() {
+            return MediaType.parse("application/zip");
+        }
+
+        @Override
+        public long contentLength() {
+            return -1L;
+        }
+
+        @Override
+        public void writeTo(BufferedSink sink) throws IOException {
+            ArchiverFactory factory = ArchiverFactory.ZIP;
+            OutputStream os = null;
+            try {
+                // the archive function 'conveniently' closes our outputstream
+                os = new CloseIgnoringOutputStream(sink.outputStream());
+                int numberOfFilesArchived = workspace.archive(factory, os, scanner);
+                log(logger, Level.INFO, format("Archived %d files", numberOfFilesArchived));
+            } catch (InterruptedException e) {
+                throw new RuntimeException("Writing of zip interrupted.", e);
+            } finally {
+                closeQuietly(os);
+            }
         }
     }
 }

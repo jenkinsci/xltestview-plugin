@@ -34,10 +34,7 @@ import com.xebialabs.xltest.ci.server.domain.TestSpecification;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
-import hudson.model.BuildListener;
-import hudson.model.ItemGroup;
+import hudson.model.*;
 import hudson.security.ACL;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
@@ -55,29 +52,34 @@ import org.kohsuke.stapler.StaplerRequest;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.logging.Logger;
 
 import static com.cloudbees.plugins.credentials.CredentialsProvider.lookupCredentials;
 import static hudson.util.FormValidation.error;
 import static hudson.util.FormValidation.ok;
 
+// TODO: should use Recorder if we want to fail the build based upon a Qualification see ArtifactArchiver
+// TODO: clean up logging / system.out
 public class XLTestNotifier extends Notifier {
     private final static Logger LOGGER = Logger.getLogger(XLTestNotifier.class.getName());
 
     public static final SchemeRequirement HTTP_SCHEME = new SchemeRequirement("http");
     public static final SchemeRequirement HTTPS_SCHEME = new SchemeRequirement("https");
 
-    private String credentialsId;
-    private transient StandardUsernamePasswordCredentials credentials;
+    private final String testSpecificationId;
+    private final String includes;
+    private final String excludes;
 
+    // constructor arguments must match config.jelly fields
     @DataBoundConstructor
-    public XLTestNotifier(StandardUsernamePasswordCredentials credentials) {
-        System.out.println("constructor " + credentials);
-        this.credentialsId = credentials == null ? null : this.credentials.getId();
+    public XLTestNotifier(String testSpecification, String includes, String excludes) {
+        System.out.printf("constructor %s %s %s\n", testSpecification, includes, excludes);
+        this.includes = includes;
+        this.excludes = excludes;
+        this.testSpecificationId = testSpecification;
     }
 
     @Override
@@ -87,39 +89,31 @@ public class XLTestNotifier extends Notifier {
 
     @Override
     public boolean perform(final AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
-        // Use full name for folder plugin
-        String jobName = build.getProject().getFullName();
-        // perhaps we need the build number later??? Use e.g. build.getUrl(); which returns something like job/foo/32
-        // String rootUrlAsString = Jenkins.getInstance().getRootUrl(); // gives http://localhost/jenkins or whatever was specified
-
+        if (!build.getResult().completeBuild) {
+            listener.getLogger().printf("[XL Test] Not sending test run data since the build was aborted");
+        }
         FilePath workspace = build.getWorkspace();
-        // TODO: why use environment variable? In stead of Jenkins.getInstance().getRootUrl()
-        String hudsonUrl = build.getEnvironment(listener).get("HUDSON_URL");
-        // TODO: why not nodename, which is a 'technical' name in stead of a display name ?
-        String slave = build.getBuiltOn().getDisplayName();
-        int buildNumber = build.getNumber();
-        String jobResult = build.getResult().toString().toLowerCase();
-        Map<String, String> queryParams = new LinkedHashMap<String, String>();
-        //queryParams.put("tool", tool);
-        //queryParams.put("pattern", pattern);
-        //queryParams.put("qualificationType", qualification);
-        queryParams.put("jenkinsUrl", hudsonUrl);
-        queryParams.put("slave", slave);
-        queryParams.put("buildNumber", Integer.toString(buildNumber));
-        queryParams.put("jobResult", jobResult);
-        // TODO: this may interfere with the previous variables
-        queryParams.putAll(build.getBuildVariables());
-        listener.getLogger().println("[XL Test] Sending back results to XL Test " + buildNumber + "; " + queryParams);
 
-        getXLTestServer().sendBackResults(workspace, listener.getLogger());
+        // TODO: various getUrl()'s return relative url's
+        // TODO: metadata.put("buildEnvironment", build.getEnvironment(listener));
+        // TODO: metadata.put("ciServerVersion", Jenkins.getVersion().toString());
+
+        Map<String, Object> metadata = new HashMap<String, Object>();
+        metadata.put("source", "jenkins");
+        metadata.put("serverUrl", Jenkins.getInstance().getRootUrl());
+        metadata.put("buildResult", translateResult(build.getResult()));
+        metadata.put("buildNumber", Integer.toString(build.getNumber()));
+        metadata.put("jobName", build.getProject().getFullName());
+        metadata.put("jobUrl", build.getProject().getUrl());
+        metadata.put("buildUrl", build.getUrl());
+        metadata.put("executedOn", build.getBuiltOn().getNodeName());   // "" in case of master
+        metadata.put("buildParameters", build.getBuildVariables());
+
+        listener.getLogger().printf("[XL Test] Sending back results to XL Test metadata %s", metadata.toString());
+
+        getXLTestServer().uploadTestRun(testSpecificationId, workspace, includes, excludes, metadata, listener.getLogger());
 
         return true;
-    }
-
-    private XLTestServer getXLTestServer() {
-        System.out.println("getXlTestSErver");
-        XLTestDescriptor desc = getDescriptor();
-        return XLTestServerFactory.newInstance(desc.getServerUrl(), desc.getProxyUrl(), getCredentials());
     }
 
     @Override
@@ -127,31 +121,42 @@ public class XLTestNotifier extends Notifier {
         return (XLTestDescriptor) super.getDescriptor();
     }
 
-    public StandardUsernamePasswordCredentials getCredentials() {
-        System.out.println("getCreds");
-        String credentialsId = this.credentialsId == null
-                ? (this.credentials == null ? null : this.credentials.getId())
-                : this.credentialsId;
-        try {
-            // lookup every time so that we always have the latest
-            StandardUsernamePasswordCredentials credentials = XLTestNotifier.lookupSystemCredentials(credentialsId);
-            if (credentials != null) {
-                this.credentials = credentials;
-                return credentials;
-            }
-        } catch (Throwable t) {
-            // ignore
+    private String translateResult(Result result) {
+        if (result.isBetterOrEqualTo(Result.SUCCESS)) {
+            return "SUCCESS";
+        } else {
+            return "FAILURE";
         }
-        return credentials;
+    }
+
+    private XLTestServer getXLTestServer() {
+        XLTestDescriptor desc = getDescriptor();
+        return XLTestServerFactory.newInstance(desc.getServerUrl(), desc.getProxyUrl(),
+                lookupSystemCredentials(desc.getCredentialsId()));
     }
 
     public static StandardUsernamePasswordCredentials lookupSystemCredentials(String credentialsId) {
         System.out.println("lookupCred " + credentialsId);
+
         return CredentialsMatchers.firstOrNull(
                 lookupCredentials(StandardUsernamePasswordCredentials.class, Jenkins.getInstance(), ACL.SYSTEM,
                         HTTP_SCHEME, HTTPS_SCHEME),
                 CredentialsMatchers.withId(credentialsId)
         );
+    }
+
+    /* getters are needed to make saving work */
+
+    public String getTestSpecificationId() {
+        return testSpecificationId;
+    }
+
+    public String getIncludes() {
+        return includes;
+    }
+
+    public String getExcludes() {
+        return excludes;
     }
 
     @Extension
@@ -173,7 +178,7 @@ public class XLTestNotifier extends Notifier {
          */
         @Override
         public boolean configure(StaplerRequest req, JSONObject json) throws FormException {
-            System.out.println(json);
+            System.out.printf("XLTestDescriptor.configure(%s)", json.toString());
 
             serverUrl = json.get("serverUrl").toString();
             proxyUrl = json.get("proxyUrl").toString();
@@ -196,7 +201,6 @@ public class XLTestNotifier extends Notifier {
         }
 
         public ListBoxModel doFillTestSpecificationItems() {
-
             System.out.printf("doFillTesSpecItems: %s", this.toString());
             ListBoxModel items = new ListBoxModel();
 

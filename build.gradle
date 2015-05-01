@@ -91,7 +91,7 @@ test {
     useTestNG()
 }
 
-// if buidling in XebiaLabs infrastructure configure our repository
+// if building in XebiaLabs infrastructure configure our repository
 if(project.hasProperty('nexusBaseUrl')) {
     // return the version number
     tasks.jpi.archiveName = "${name}-${version}.hpi"
@@ -159,7 +159,10 @@ dependencies {
 
     testCompile "org.testng:testng:6.8.21"
     testCompile "com.squareup.okhttp:mockwebserver:${okHttpVersion}"
-    testCompile "org.mockito:mockito-all:1.10.19"
+    testCompile "org.mockito:mockito-core:1.10.19"
+
+    // also included in jenkins itself
+    testCompile "javax.mail:mail:1.4.4"
 }
 
 // configure release plugin

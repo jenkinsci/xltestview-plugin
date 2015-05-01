@@ -1,14 +1,19 @@
 <!-- post-build step -->
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
-    <!-- TODO: select box with test specifications
-     once selected display some things like qualification, tooltype etc.
-    -->
-    <f:entry field="testSpecification" title="${%Choose Test Specification}">
+
+    <!-- TODO: once selected display some things like qualification, tooltype etc. -->
+    <!-- TODO: if pattern is not set show the default pattern for the tool on the testspec -->
+
+    <f:entry field="testSpecification" title="${%Choose test specification}">
         <f:select/>
     </f:entry>
 
-    <f:entry title="${%Pattern}">
+    <f:entry field="includes" title="${%Include pattern}">
         <f:textbox default="" id="xl-test-pb-pattern"/>
+    </f:entry>
+
+    <f:entry field="excludes" title="${%Exclude pattern}">
+        <f:textbox default=""/>
     </f:entry>
 </j:jelly>
