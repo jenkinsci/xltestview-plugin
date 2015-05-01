@@ -23,10 +23,32 @@
 package com.xebialabs.xltest.ci.server;
 
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
+import com.xebialabs.xltest.ci.server.authentication.UsernamePassword;
 
 public class XLTestServerFactory {
 
+    /* wrap the StandardUsernamePasswordCredentials so we can test the XLTestServerImpl
+      Jenkins' Secret class is too final and too tightly coupled to a running Jenkins.
+     */
+    static final class UsernamePasswordImpl implements UsernamePassword {
+        private final StandardUsernamePasswordCredentials credentials;
+
+        public UsernamePasswordImpl(StandardUsernamePasswordCredentials credentials) {
+            this.credentials = credentials;
+        }
+
+        @Override
+        public String getUsername() {
+            return credentials.getUsername();
+        }
+
+        @Override
+        public String getPassword() {
+            return credentials.getPassword().getPlainText();
+        }
+    }
+
     public static XLTestServer newInstance(String serverUrl, String proxyUrl, StandardUsernamePasswordCredentials credentials) {
-        return new XLTestServerImpl(serverUrl, proxyUrl, credentials);
+        return new XLTestServerImpl(serverUrl, proxyUrl, new UsernamePasswordImpl(credentials));
     }
 }

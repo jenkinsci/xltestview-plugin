@@ -26,9 +26,11 @@ import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.common.StandardUsernameListBoxModel;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.SchemeRequirement;
+import com.google.common.base.Objects;
 import com.google.common.base.Strings;
 import com.xebialabs.xltest.ci.server.XLTestServer;
 import com.xebialabs.xltest.ci.server.XLTestServerFactory;
+import com.xebialabs.xltest.ci.server.domain.TestSpecification;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -56,6 +58,7 @@ import java.net.URL;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import static com.cloudbees.plugins.credentials.CredentialsProvider.lookupCredentials;
@@ -176,7 +179,7 @@ public class XLTestNotifier extends Notifier {
             proxyUrl = json.get("proxyUrl").toString();
             credentialsId = json.get("credentialsId").toString();
 
-            // TODO could check URLs here and return false or maybe throw error to prevent saving invalid information....
+            // TODO could check URLs here? and return false?
 
             save();  //serialize to xml
 
@@ -192,6 +195,19 @@ public class XLTestNotifier extends Notifier {
             return new StandardUsernameListBoxModel().withAll(creds);
         }
 
+        public ListBoxModel doFillTestSpecificationItems() {
+
+            System.out.printf("doFillTesSpecItems: %s", this.toString());
+            ListBoxModel items = new ListBoxModel();
+
+            XLTestServer xlts = XLTestServerFactory.newInstance(serverUrl, proxyUrl, XLTestNotifier.lookupSystemCredentials(credentialsId));
+            Map<String, TestSpecification> ts = xlts.getTestSpecifications();
+            for (Map.Entry<String, TestSpecification> t : ts.entrySet()) {
+                items.add(String.format("%s > %s", t.getValue().getProject().getTitle(), t.getValue().getTitle()), t.getKey());
+            }
+            return items;
+        }
+
         @Override
         public boolean isApplicable(Class<? extends AbstractProject> jobType) {
             return true;
@@ -202,12 +218,10 @@ public class XLTestNotifier extends Notifier {
             return Messages.XLTestNotifier_displayName();
         }
 
-
         public FormValidation doTestConnection(@QueryParameter("serverUrl") final String serverUrl,
                                                @QueryParameter("proxyUrl") final String proxyUrl,
                                                @QueryParameter("credentialsId") final String credentialsId
         ) {
-            System.out.println("conntest");
             try {
                 StandardUsernamePasswordCredentials credentials = XLTestNotifier.lookupSystemCredentials(credentialsId);
                 if (credentials == null) {
@@ -216,6 +230,7 @@ public class XLTestNotifier extends Notifier {
                 if (serverUrl == null || serverUrl.isEmpty()) {
                     return FormValidation.error("No serverUrl specified");
                 }
+                // see if we can create a new instance
                 XLTestServer srv = XLTestServerFactory.newInstance(serverUrl, proxyUrl, credentials);
                 srv.checkConnection();
                 return FormValidation.ok("Success");
@@ -223,7 +238,6 @@ public class XLTestNotifier extends Notifier {
                 return FormValidation.error("Client error : " + e.getMessage());
             }
         }
-
 
         /* Form 'Validation' */
 
@@ -258,6 +272,15 @@ public class XLTestNotifier extends Notifier {
 
         public String getCredentialsId() {
             return credentialsId;
+        }
+
+        @Override
+        public String toString() {
+            return Objects.toStringHelper(this)
+                    .add("serverUrl", serverUrl)
+                    .add("proxyUrl", proxyUrl)
+                    .add("credentialsId", credentialsId)
+                    .toString();
         }
     }
 }

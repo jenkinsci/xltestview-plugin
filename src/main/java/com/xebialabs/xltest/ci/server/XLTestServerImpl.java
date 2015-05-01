@@ -22,77 +22,104 @@
  */
 package com.xebialabs.xltest.ci.server;
 
-import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
-import com.google.common.collect.Lists;
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.client.config.ClientConfig;
-import com.sun.jersey.api.client.config.DefaultClientConfig;
-import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
-import com.sun.jersey.core.util.Base64;
-import com.xebialabs.xltest.ci.server.domain.TestTool;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.squareup.okhttp.Credentials;
+import com.squareup.okhttp.OkHttpClient;
+import com.squareup.okhttp.Request;
+import com.squareup.okhttp.Response;
+import com.xebialabs.xltest.ci.server.authentication.UsernamePassword;
+import com.xebialabs.xltest.ci.server.domain.TestSpecification;
 import hudson.FilePath;
 import hudson.util.DirScanner;
-import hudson.util.DirScanner.Glob;
-import hudson.util.Secret;
-import hudson.util.io.ArchiverFactory;
-import org.codehaus.jackson.map.ObjectMapper;
 
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.PrintStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.List;
+import java.net.*;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static org.apache.commons.io.IOUtils.closeQuietly;
-
 public class XLTestServerImpl implements XLTestServer {
-
     private final static Logger LOGGER = Logger.getLogger(XLTestServerImpl.class.getName());
+
     public static final String XL_TEST_LOG_PREFIX = "[XL Test]";
+    public static final TypeReference<Map<String, TestSpecification>> MAP_OF_TESTSPECIFICATION = new TypeReference<Map<String, TestSpecification>>() {
+    };
 
-    private String proxyUrl;
-    private String serverUrl;
+    public static final String API_CONNECTION_CHECK = "/api/internal/data";
+    public static final String API_TESTSPECIFICATIONS_EXTENDED = "/api/internal/testspecifications/extended";
+    public static final String API_IMPORT = "/api/internal/import";
 
-    private StandardUsernamePasswordCredentials credentials;
+    private OkHttpClient client = new OkHttpClient();
 
-    XLTestServerImpl(String serverUrl, String proxyUrl, StandardUsernamePasswordCredentials credentials) {
+    private URI proxyUrl;
+    private URI serverUrl;
+
+    private UsernamePassword credentials;
+
+    XLTestServerImpl(String serverUrl, String proxyUrl, UsernamePassword credentials) {
+        this.serverUrl = URI.create(serverUrl);
         this.credentials = credentials;
-        this.proxyUrl = proxyUrl;
-        this.serverUrl = serverUrl + "/api/internal";
+        this.proxyUrl = proxyUrl != null && !proxyUrl.isEmpty() ? URI.create(proxyUrl) : null;
+        setupHttpClient();
+    }
+
+    private void setupHttpClient() {
+        // TODO: make configurable ?
+        client.setConnectTimeout(10, TimeUnit.SECONDS);
+        client.setWriteTimeout(10, TimeUnit.SECONDS);
+        client.setReadTimeout(30, TimeUnit.SECONDS);
+
+        if (proxyUrl != null) {
+            Proxy p = new Proxy(Proxy.Type.HTTP, InetSocketAddress.createUnresolved(proxyUrl.getHost(), proxyUrl.getPort()));
+            client.setProxy(p);
+        }
+    }
+
+    private Request createRequestFor(String relativeUrl) {
+        try {
+            URL url = new URI(serverUrl.toString() + relativeUrl).toURL();
+
+            return new Request.Builder()
+                    .url(url)
+                    .header("Accept", "application/json; charset=utf-8")
+                    .header("Authorization", createCredential())
+                    .build();
+
+        } catch (MalformedURLException e) {
+            throw new IllegalArgumentException(e);
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 
     @Override
     public void checkConnection() {
-        // setup REST-Client
-        ClientConfig config = new DefaultClientConfig();
-        Client client = Client.create(config);
+        try {
+            LOGGER.info("Checking connection to " + serverUrl);
+            Request request = createRequestFor(API_CONNECTION_CHECK);
 
-        String user = getUsername();
-        String password = getPassword();
-
-        client.addFilter(new HTTPBasicAuthFilter(user, password));
-        WebResource service = client.resource(serverUrl);
-
-        LOGGER.info("Check that XL Test is running");
-        ClientResponse response = service.path("data").accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
-        switch (response.getStatus()) {
-            case 200:
-                return;
-            case 401:
-                throw new IllegalStateException("Credentials are invalid");
-            case 404:
-                throw new IllegalStateException("URL is invalid or server is not running");
-            default:
-                throw new IllegalStateException("Unknown error. Status code: " + response.getStatus() + ". Response message: " + response.toString());
+            Response response = client.newCall(request).execute();
+            switch (response.code()) {
+                case 200:
+                    return;
+                case 401:
+                    throw new IllegalStateException("Credentials are invalid");
+                case 404:
+                    throw new IllegalStateException("URL is invalid or server is not running");
+                default:
+                    throw new IllegalStateException("Unknown error. Status code: " + response.code() + ". Response message: " + response.toString());
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
+    }
+
+    private String createCredential() {
+        return Credentials.basic(credentials.getUsername(), credentials.getPassword());
     }
 
     @Override
@@ -102,114 +129,107 @@ public class XLTestServerImpl implements XLTestServer {
 
     @Override
     public void sendBackResults(FilePath workspace, PrintStream logger) throws IOException, InterruptedException {
-        UriBuilder builder = UriBuilder.fromPath(serverUrl).path("/import/{arg1}");
-        //addRequestParameters(builder, queryParameters);
-        URL feedbackUrl = builder.build("testspecidgoeshere").toURL();
+//        try {
+//            LOGGER.info("Uploading results to " + serverUrl);
+//            Request request = createRequestFor(API_IMPORT);
+//
+//            Response response = client.newCall(request).execute();
+//            switch (response.code()) {
+//                case 200:
+//                    return;
+//                case 401:
+//                    throw new IllegalStateException("Credentials are invalid");
+//                case 404:
+//                    throw new IllegalStateException("URL is invalid or server is not running");
+//                default:
+//                    throw new IllegalStateException("Unknown error. Status code: " + response.code() + ". Response message: " + response.toString());
+//            }
+//        } catch (IOException e) {
+//            throw new RuntimeException(e);
+//        }
 
-        String user = getUsername();
-        String password = getPassword();
+//        UriBuilder builder = UriBuilder.fromPath(serverUrl).path("/import/{arg1}");
+//        //addRequestParameters(builder, queryParameters);
+//        URL feedbackUrl = builder.build("testspecidgoeshere").toURL();
+//
+//        String user = getUsername();
+//        String password = getPassword();
+//
+//        HttpURLConnection connection = null;
+//        try {
+//            log(logger, Level.INFO, "Trying to send workspace: " + workspace.toURI().toString() + " to XL Test on URL: " + feedbackUrl.toString());
+//            LOGGER.info("Trying to send workspace: " + workspace.toURI().toString() + " to XL Test on URL: " + feedbackUrl.toString());
+//
+//            connection = (HttpURLConnection) feedbackUrl.openConnection();
+//            connection.setDoOutput(true);
+//            connection.setDoInput(true);
+//            connection.setInstanceFollowRedirects(false);
+//            connection.setUseCaches(false);
+//
+//            String authorization = "Basic " + new String(Base64.encode((user + ":" + password).getBytes()));
+//            connection.setRequestProperty("Authorization", authorization);
+//
+//            connection.setRequestMethod("POST");
+//            connection.setRequestProperty("Content-Type", "application/zip");
+//            ArchiverFactory factory = ArchiverFactory.ZIP;
+//
+//            // TODO: pattern + I don't get the logic behind what's passed into Glob
+//        String pattern = "**/*.xml";
+//        DirScanner scanner = new DirScanner.Glob(pattern + "," + pattern + "/**", null);
+//        // no excludes supported (yet)
+//        log(logger, Level.INFO, "Going to scan dir: " + workspace.getRemote() + " for files to zip using pattern: " + pattern);
+//        LOGGER.info("Going to scan dir: " + workspace.getRemote() + " for files to zip using pattern: " + pattern);
+//
+//            int numberOfFilesArchived;
+//            OutputStream os = null;
+//            try {
+//                os = connection.getOutputStream();
+//                numberOfFilesArchived = workspace.archive(factory, os, scanner);
+//                os.flush();
+//            } finally {
+//                closeQuietly(os);
+//            }
+//
+//            // Need this to trigger the sending of the request
+//            int responseCode = connection.getResponseCode();
+//            log(logger, Level.INFO, "Zip sent containing: " + numberOfFilesArchived + " files. Response code from XL Test was: " + responseCode);
+//            if (responseCode != 200) {
+//                log(logger, Level.INFO, "Response message: " + connection.getResponseMessage());
+//            }
+//        } catch (IOException e) {
+//            log(logger, Level.SEVERE, "Could not deliver page information", e);
+//            LOGGER.log(Level.SEVERE, "Could not deliver page information", e);
+//            throw e;
+//        } catch (InterruptedException e) {
+//            log(logger, Level.SEVERE, "Execution was interrupted", e);
+//            LOGGER.log(Level.SEVERE, "Execution was interrupted", e);
+//            throw e;
+//        } finally {
+//            if (connection != null) {
+//                connection.disconnect();
+//            }
+//        }
+    }
 
-        HttpURLConnection connection = null;
-        try {
-            log(logger, Level.INFO, "Trying to send workspace: " + workspace.toURI().toString() + " to XL Test on URL: " + feedbackUrl.toString());
-            LOGGER.info("Trying to send workspace: " + workspace.toURI().toString() + " to XL Test on URL: " + feedbackUrl.toString());
-
-            connection = (HttpURLConnection) feedbackUrl.openConnection();
-            connection.setDoOutput(true);
-            connection.setDoInput(true);
-            connection.setInstanceFollowRedirects(false);
-            connection.setUseCaches(false);
-
-            String authorization = "Basic " + new String(Base64.encode((user + ":" + password).getBytes()));
-            connection.setRequestProperty("Authorization", authorization);
-
-            connection.setRequestMethod("POST");
-            connection.setRequestProperty("Content-Type", "application/zip");
-            ArchiverFactory factory = ArchiverFactory.ZIP;
-
-            // TODO: pattern + I don't get the logic behind what's passed into Glob
-            String pattern = "**/*.xml";
-            DirScanner scanner = new Glob(pattern + "," + pattern + "/**", null); // no excludes supported (yet)
-            log(logger, Level.INFO, "Going to scan dir: " + workspace.getRemote() + " for files to zip using pattern: " + pattern);
-            LOGGER.info("Going to scan dir: " + workspace.getRemote() + " for files to zip using pattern: " + pattern);
-
-            int numberOfFilesArchived;
-            OutputStream os = null;
-            try {
-                os = connection.getOutputStream();
-                numberOfFilesArchived = workspace.archive(factory, os, scanner);
-                os.flush();
-            } finally {
-                closeQuietly(os);
-            }
-
-            // Need this to trigger the sending of the request
-            int responseCode = connection.getResponseCode();
-            log(logger, Level.INFO, "Zip sent containing: " + numberOfFilesArchived + " files. Response code from XL Test was: " + responseCode);
-            if (responseCode != 200) {
-                log(logger, Level.INFO, "Response message: " + connection.getResponseMessage());
-            }
-        } catch (IOException e) {
-            log(logger, Level.SEVERE, "Could not deliver page information", e);
-            LOGGER.log(Level.SEVERE, "Could not deliver page information", e);
-            throw e;
-        } catch (InterruptedException e) {
-            log(logger, Level.SEVERE, "Execution was interrupted", e);
-            LOGGER.log(Level.SEVERE, "Execution was interrupted", e);
-            throw e;
-        } finally {
-            if (connection != null) {
-                connection.disconnect();
-            }
-        }
+    private ObjectMapper createMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        // make things lenient...
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        return mapper;
     }
 
     @Override
-    public List<TestTool> getTestTools() {
-        ClientConfig config = new DefaultClientConfig();
-        Client client = Client.create(config);
-
-        String user = getUsername();
-        String password = getPassword();
-
-        client.addFilter(new HTTPBasicAuthFilter(user, password));
-        WebResource service = client.resource(serverUrl + "/testtools");
-
-        ClientResponse response = service.path("/").accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
-
-        List<TestTool> testTools = Lists.newArrayList();
-
-        ObjectMapper mapper = new ObjectMapper();
+    public Map<String, TestSpecification> getTestSpecifications() {
         try {
-            List<Map<String, String>> testToolsJsonList = mapper.readValue(response.getEntityInputStream(), List.class);
-            for (Map<String, String> entry : testToolsJsonList) {
-                testTools.add(new TestTool(entry.get("name"), entry.get("pattern")));
-            }
+            Request request = createRequestFor(API_TESTSPECIFICATIONS_EXTENDED);
+            Response response = client.newCall(request).execute();
+
+            ObjectMapper mapper = createMapper();
+            Map<String, TestSpecification> testSpecifications = mapper.readValue(response.body().byteStream(), MAP_OF_TESTSPECIFICATION);
+            LOGGER.finer("Received test specifications: " + testSpecifications);
+            return testSpecifications;
         } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return testTools;
-    }
-
-    private String getPassword() {
-        return Secret.toString(credentials.getPassword());
-    }
-
-    private String getUsername() {
-        return credentials.getUsername();
-    }
-
-    private void addRequestParameters(UriBuilder builder, Map<String, String> buildVariables) {
-        for (Map.Entry<String, String> entry : buildVariables.entrySet()) {
-            if ("qualificationType".equals(entry.getKey())) {
-                String value = entry.getValue();
-                if (!"default".equals(value) && value != null) {
-                    builder.queryParam(entry.getKey(), value);
-                }
-                continue;
-            }
-            builder.queryParam(entry.getKey(), entry.getValue());
+            throw new RuntimeException(e);
         }
     }
 

@@ -4,6 +4,10 @@
     <!-- TODO: select box with test specifications
      once selected display some things like qualification, tooltype etc.
     -->
+    <f:entry field="testSpecification" title="${%Choose Test Specification}">
+        <f:select/>
+    </f:entry>
+
     <f:entry title="${%Pattern}">
         <f:textbox default="" id="xl-test-pb-pattern"/>
     </f:entry>
