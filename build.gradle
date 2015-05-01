@@ -87,8 +87,9 @@ repositories {
     }
 }
 
-// disable tests they need work
-test.onlyIf { false }
+test {
+    useTestNG()
+}
 
 // if buidling in XebiaLabs infrastructure configure our repository
 if(project.hasProperty('nexusBaseUrl')) {
@@ -130,20 +131,35 @@ configurations {
     testCompile.exclude group: 'org.netbeans.modules', module: 'org-netbeans-insane'
 }
 
+ext {
+    jacksonVersion = '2.5.3'
+    okHttpVersion = '2.3.0'
+    slf4jVersion = '1.7.12'
+    logbackVersion = '1.1.3'
+}
+
 dependencies {
-    compile "org.slf4j:slf4j-api:1.7.5"
+    compile "org.slf4j:slf4j-api:${slf4jVersion}"
 
-    compile 'org.jenkins-ci.plugins:credentials:1.9.4@jar'
+    compile "org.jenkins-ci.plugins:credentials:1.9.4@jar"
 
-    compile "com.sun.jersey:jersey-client:1.18"
-    compile "com.sun.jersey:jersey-core:1.18"
-    compile "com.sun.jersey:jersey-json:1.18"
+    compile "com.squareup.okhttp:okhttp:${okHttpVersion}"
+    compile "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
+    compile "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
 
-    compile 'com.google.code.findbugs:jsr305:2.0.2'
-    compile 'findbugs:annotations:1.0.0'
+    // shut up various warnings regarding annotations
+    compile "com.google.code.findbugs:jsr305:2.0.2"
+    compile "findbugs:annotations:1.0.0"
 
-    testCompile "junit:junit:4.11"
-    testCompile "org.mockito:mockito-all:1.9.5"
+    testCompile "org.slf4j:log4j-over-slf4j:${slf4jVersion}"
+    testCompile "org.slf4j:jul-to-slf4j:${slf4jVersion}"
+    testCompile "org.slf4j:jcl-over-slf4j:${slf4jVersion}"
+    testCompile "ch.qos.logback:logback-classic:${logbackVersion}"
+    testCompile "ch.qos.logback:logback-core:${logbackVersion}"
+
+    testCompile "org.testng:testng:6.8.21"
+    testCompile "com.squareup.okhttp:mockwebserver:${okHttpVersion}"
+    testCompile "org.mockito:mockito-all:1.10.19"
 }
 
 // configure release plugin
