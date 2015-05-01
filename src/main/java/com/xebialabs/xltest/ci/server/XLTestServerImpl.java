@@ -165,6 +165,9 @@ public class XLTestServerImpl implements XLTestServer {
             switch (response.code()) {
                 case 200:
                     return;
+                case 304:
+                    log(logger, Level.WARNING, "No new results were detected. Nothing was imported.");
+                    return;
                 case 401:
                     throw new IllegalStateException("Credentials are invalid");
                 case 404:
