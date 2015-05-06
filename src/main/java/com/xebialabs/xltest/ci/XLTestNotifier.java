@@ -52,6 +52,7 @@ import org.kohsuke.stapler.StaplerRequest;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -69,17 +70,13 @@ public class XLTestNotifier extends Notifier {
     public static final SchemeRequirement HTTP_SCHEME = new SchemeRequirement("http");
     public static final SchemeRequirement HTTPS_SCHEME = new SchemeRequirement("https");
 
-    private final String testSpecificationId;
-    private final String includes;
-    private final String excludes;
+    public List<TestSpecificationDescribable> testSpecifications = Collections.emptyList();
 
     // constructor arguments must match config.jelly fields
     @DataBoundConstructor
-    public XLTestNotifier(String testSpecification, String includes, String excludes) {
-        System.out.printf("constructor %s %s %s\n", testSpecification, includes, excludes);
-        this.includes = includes;
-        this.excludes = excludes;
-        this.testSpecificationId = testSpecification;
+    public XLTestNotifier(List<TestSpecificationDescribable> testSpecifications) {
+        // System.out.printf("constructor %s\n", testSpecifications);
+        this.testSpecifications = testSpecifications;
     }
 
     @Override
@@ -98,20 +95,22 @@ public class XLTestNotifier extends Notifier {
         // TODO: metadata.put("buildEnvironment", build.getEnvironment(listener));
         // TODO: metadata.put("ciServerVersion", Jenkins.getVersion().toString());
 
-        Map<String, Object> metadata = new HashMap<String, Object>();
-        metadata.put("source", "jenkins");
-        metadata.put("serverUrl", Jenkins.getInstance().getRootUrl());
-        metadata.put("buildResult", translateResult(build.getResult()));
-        metadata.put("buildNumber", Integer.toString(build.getNumber()));
-        metadata.put("jobName", build.getProject().getFullName());
-        metadata.put("jobUrl", build.getProject().getUrl());
-        metadata.put("buildUrl", build.getUrl());
-        metadata.put("executedOn", build.getBuiltOn().getNodeName());   // "" in case of master
-        metadata.put("buildParameters", build.getBuildVariables());
+        for(TestSpecificationDescribable ts : testSpecifications) {
+            Map<String, Object> metadata = new HashMap<String, Object>();
+            metadata.put("source", "jenkins");
+            metadata.put("serverUrl", Jenkins.getInstance().getRootUrl());
+            metadata.put("buildResult", translateResult(build.getResult()));
+            metadata.put("buildNumber", Integer.toString(build.getNumber()));
+            metadata.put("jobName", build.getProject().getFullName());
+            metadata.put("jobUrl", build.getProject().getUrl());
+            metadata.put("buildUrl", build.getUrl());
+            metadata.put("executedOn", build.getBuiltOn().getNodeName());   // "" in case of master
+            metadata.put("buildParameters", build.getBuildVariables());
 
-        listener.getLogger().printf("[XL Test] Sending back results to XL Test metadata %s", metadata.toString());
+            listener.getLogger().printf("[XL Test] Sending back results to XL Test metadata %s", metadata.toString());
 
-        getXLTestServer().uploadTestRun(testSpecificationId, workspace, includes, excludes, metadata, listener.getLogger());
+            getXLTestServer().uploadTestRun(ts.getTestSpecificationId(), workspace, ts.getIncludes(), ts.getExcludes(), metadata, listener.getLogger());
+        }
 
         return true;
     }
@@ -143,20 +142,6 @@ public class XLTestNotifier extends Notifier {
                         HTTP_SCHEME, HTTPS_SCHEME),
                 CredentialsMatchers.withId(credentialsId)
         );
-    }
-
-    /* getters are needed to make saving work */
-
-    public String getTestSpecificationId() {
-        return testSpecificationId;
-    }
-
-    public String getIncludes() {
-        return includes;
-    }
-
-    public String getExcludes() {
-        return excludes;
     }
 
     @Extension
@@ -200,17 +185,6 @@ public class XLTestNotifier extends Notifier {
             return new StandardUsernameListBoxModel().withAll(creds);
         }
 
-        public ListBoxModel doFillTestSpecificationItems() {
-            System.out.printf("doFillTesSpecItems: %s", this.toString());
-            ListBoxModel items = new ListBoxModel();
-
-            XLTestServer xlts = XLTestServerFactory.newInstance(serverUrl, proxyUrl, XLTestNotifier.lookupSystemCredentials(credentialsId));
-            Map<String, TestSpecification> ts = xlts.getTestSpecifications();
-            for (Map.Entry<String, TestSpecification> t : ts.entrySet()) {
-                items.add(String.format("%s > %s", t.getValue().getProject().getTitle(), t.getValue().getTitle()), t.getKey());
-            }
-            return items;
-        }
 
         @Override
         public boolean isApplicable(Class<? extends AbstractProject> jobType) {

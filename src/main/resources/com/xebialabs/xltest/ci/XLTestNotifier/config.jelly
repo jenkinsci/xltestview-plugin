@@ -4,16 +4,60 @@
 
     <!-- TODO: once selected display some things like qualification, tooltype etc. -->
     <!-- TODO: if pattern is not set show the default pattern for the tool on the testspec -->
+    <j:if test="${descriptor.getServerUrl() == null || descriptor.getServerUrl().isEmpty()}">
+        <div>
+            <b>Note:</b>
+            To proceed you need to configure a XL Test instance
+            <a href="${rootURL}/configure">here</a>, and inside XL Test
+            at least one
+            <i>test specification</i>
+            must be set up.
+        </div>
+    </j:if>
+    <j:if test="${descriptor.getServerUrl() != null &amp;&amp; !descriptor.getServerUrl().isEmpty()}">
+        <f:entry title="${%Test Specifications}" description="Test specifications" field="testSpecifications">
+            <f:repeatable var="testSpecification" field="testSpecifications">
+                <table width="100%">
+                    <f:entry field="testSpecificationId" title="${%Choose test specification}">
+                        <f:select/>
+                    </f:entry>
 
-    <f:entry field="testSpecification" title="${%Choose test specification}">
-        <f:select/>
-    </f:entry>
+                    <f:entry field="includes" title="${%Include pattern}">
+                        <f:textbox default="" id="xl-test-pb-pattern"/>
+                    </f:entry>
 
-    <f:entry field="includes" title="${%Include pattern}">
-        <f:textbox default="" id="xl-test-pb-pattern"/>
-    </f:entry>
+                    <f:entry field="excludes" title="${%Exclude pattern}">
+                        <f:textbox default=""/>
+                    </f:entry>
+                    <f:entry title="">
+                        <div align="right">
+                            <f:repeatableDeleteButton/>
+                        </div>
+                    </f:entry>
+                </table>
+            </f:repeatable>
+        </f:entry>
+    </j:if>
+    <!--
 
-    <f:entry field="excludes" title="${%Exclude pattern}">
-        <f:textbox default=""/>
+        <f:entry title="${%Options}" description="Options" field="packageProperties" help="/plugin/deployit-plugin/help-package-properties.html">
+        <f:repeatable var="property" field="packageProperties">
+            <table width="100%">
+                <f:entry title="${%Name}" field="propertyName">
+                    <f:select />
+                </f:entry>
+
+                <f:entry title="${%Value}" field="propertyValue">
+                    <f:textbox />
+                </f:entry>
+
+                <f:entry title="">
+                    <div align="right">
+                        <f:repeatableDeleteButton />
+                    </div>
+                </f:entry>
+            </table>
+        </f:repeatable>
     </f:entry>
+-->
 </j:jelly>
