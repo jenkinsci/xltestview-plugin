@@ -56,6 +56,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.cloudbees.plugins.credentials.CredentialsProvider.lookupCredentials;
@@ -91,21 +92,31 @@ public class XLTestNotifier extends Notifier {
         }
         FilePath workspace = build.getWorkspace();
 
-        // TODO: various getUrl()'s return relative url's
         // TODO: metadata.put("buildEnvironment", build.getEnvironment(listener));
         // TODO: metadata.put("ciServerVersion", Jenkins.getVersion().toString());
 
         listener.getLogger().printf("[XL Test] Uploading test run data to '%s'\n", getDescriptor().getServerUrl());
 
+        String rootUrl = Jenkins.getInstance().getRootUrl();
+        if (rootUrl == null) {
+            LOGGER.log(Level.SEVERE, "Unable to determine root URL for jenkins instance aborting post build step.");
+            listener.getLogger().printf("[XL Test] unable to determine root URL for the jenkins instance\n");
+            throw new IllegalStateException("Unable to determine root URL for jenkins instance. Aborting XL Test post build step.");
+        }
+        String jobUrl = rootUrl + build.getProject().getUrl();
+        String buildUrl = rootUrl + build.getUrl();
+        String buildResult = translateResult(build.getResult());
+        String buildNumber = Integer.toString(build.getNumber());
+
         for (TestSpecificationDescribable ts : testSpecifications) {
             Map<String, Object> metadata = new HashMap<String, Object>();
             metadata.put("source", "jenkins");
-            metadata.put("serverUrl", Jenkins.getInstance().getRootUrl());
-            metadata.put("buildResult", translateResult(build.getResult()));
-            metadata.put("buildNumber", Integer.toString(build.getNumber()));
+            metadata.put("serverUrl", rootUrl);
+            metadata.put("buildResult", buildResult);
+            metadata.put("buildNumber", buildNumber);
             metadata.put("jobName", build.getProject().getFullName());
-            metadata.put("jobUrl", build.getProject().getUrl());
-            metadata.put("buildUrl", build.getUrl());
+            metadata.put("jobUrl", jobUrl);
+            metadata.put("buildUrl", buildUrl);
             metadata.put("executedOn", build.getBuiltOn().getNodeName());   // "" in case of master
             metadata.put("buildParameters", build.getBuildVariables());
 
