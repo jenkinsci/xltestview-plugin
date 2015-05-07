@@ -79,15 +79,22 @@ public class TestSpecificationDescribable extends AbstractDescribableImpl<TestSp
                     xlTestDescriptor.getProxyUrl(),
                     XLTestNotifier.lookupSystemCredentials(xlTestDescriptor.getCredentialsId()));
 
-            // TODO: sort and filter, no supersets
             Map<String, TestSpecification> ts = xlTest.getTestSpecifications();
             for (Map.Entry<String, TestSpecification> t : ts.entrySet()) {
-                items.add(
-                        format("%s > %s", t.getValue().getProject().getTitle(), t.getValue().getTitle()),
-                        t.getKey()
-                );
+                if (!isSetOfTestSpecifications(t.getValue())) {
+                    items.add(
+                            format("%s > %s", t.getValue().getProject().getTitle(), t.getValue().getTitle()),
+                            t.getKey()
+                    );
+                }
             }
+            JellyUtil.sortListBoxModel(items);
             return items;
+        }
+
+        private boolean isSetOfTestSpecifications(TestSpecification testSpecification) {
+            // TODO: this should be a check on the type systems
+            return "xltest.TestSpecificationSet".equals(testSpecification.getType());
         }
     }
 }
