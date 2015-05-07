@@ -43,7 +43,6 @@ import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
-import org.apache.commons.collections.MapUtils;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
@@ -153,6 +152,7 @@ public class XLTestNotifier extends Notifier {
     }
 
     public static StandardUsernamePasswordCredentials lookupSystemCredentials(String credentialsId) {
+
         System.out.println("lookupCred " + credentialsId);
 
         return CredentialsMatchers.firstOrNull(
@@ -219,12 +219,15 @@ public class XLTestNotifier extends Notifier {
                                                @QueryParameter("credentialsId") final String credentialsId
         ) {
             try {
-                StandardUsernamePasswordCredentials credentials = XLTestNotifier.lookupSystemCredentials(credentialsId);
-                if (credentials == null) {
+                if (credentialsId == null || credentialsId.isEmpty()) {
                     return FormValidation.error("No credentials specified");
                 }
+                StandardUsernamePasswordCredentials credentials = XLTestNotifier.lookupSystemCredentials(credentialsId);
+                if (credentials == null) {
+                    return FormValidation.error(String.format("Could not find credential with id '%s'", credentialsId));
+                }
                 if (serverUrl == null || serverUrl.isEmpty()) {
-                    return FormValidation.error("No serverUrl specified");
+                    return FormValidation.error("No server URL specified");
                 }
                 // see if we can create a new instance
                 XLTestServer srv = XLTestServerFactory.newInstance(serverUrl, proxyUrl, credentials);
