@@ -88,7 +88,10 @@ public class XLTestNotifier extends Notifier {
     @Override
     public boolean perform(final AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
         if (!build.getResult().completeBuild) {
-            listener.getLogger().printf("[XL Test] Not sending test run data since the build was aborted");
+            listener.getLogger().printf("[XL Test] Not sending test run data since the build was aborted\n");
+            // according to javadoc we have to do this...
+            // TODO: or throw an exception?
+            return true;
         }
         FilePath workspace = build.getWorkspace();
 
@@ -130,7 +133,7 @@ public class XLTestNotifier extends Notifier {
         try {
             // TODO: title would be nicer..
             logger.printf("[XL Test] Uploading test run for test specification with id '%s'\n", ts.getTestSpecificationId());
-            logger.printf("[XL Test] data:\n%s", metadata.toString());
+            logger.printf("[XL Test] data:\n%s\n", metadata.toString());
 
             getXLTestServer().uploadTestRun(ts.getTestSpecificationId(), workspace, ts.getIncludes(), ts.getExcludes(), metadata, logger);
         } catch (RuntimeException e) {
