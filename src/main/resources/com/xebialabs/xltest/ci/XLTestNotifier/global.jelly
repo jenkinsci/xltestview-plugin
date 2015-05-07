@@ -6,7 +6,7 @@
     <f:section title="XL Test">
 
         <f:entry title="${%Server Url}" field="serverUrl">
-            <f:textbox default="http://myXLTestHost:6516"/>
+            <f:textbox/>
         </f:entry>
 
         <f:entry title="${%Proxy Url}" field="proxyUrl">
@@ -18,7 +18,7 @@
         </f:entry>
 
         <f:validateButton title="${%Test Connection}" progress="${%Testing...}"
-                method="testConnection" with="serverUrl,proxyUrl,credentialsId" />
+                          method="testConnection" with="serverUrl,proxyUrl,credentialsId"/>
 
     </f:section>
 </j:jelly>

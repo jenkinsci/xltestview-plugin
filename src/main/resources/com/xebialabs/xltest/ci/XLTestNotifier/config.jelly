@@ -21,7 +21,7 @@
         </f:block>
     </j:if>
     <j:if test="${descriptor.getServerUrl() != null &amp;&amp; !descriptor.getServerUrl().isEmpty()}">
-        <f:entry title="${%Test Specifications}" description="Test specifications" field="testSpecifications">
+        <f:entry title="${%Test Specifications}" field="testSpecifications">
             <f:repeatable var="testSpecification" field="testSpecifications">
                 <table width="100%">
                     <f:entry field="testSpecificationId" title="${%Choose test specification}">
