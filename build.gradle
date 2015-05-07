@@ -141,7 +141,7 @@ ext {
 dependencies {
     compile "org.slf4j:slf4j-api:${slf4jVersion}"
 
-    compile "org.jenkins-ci.plugins:credentials:1.22@jar"
+    jenkinsPlugins "org.jenkins-ci.plugins:credentials:1.22@jar"
 
     compile "com.squareup.okhttp:okhttp:${okHttpVersion}"
     compile "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
