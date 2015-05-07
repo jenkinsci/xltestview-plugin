@@ -30,7 +30,6 @@ import com.google.common.base.Objects;
 import com.google.common.base.Strings;
 import com.xebialabs.xltest.ci.server.XLTestServer;
 import com.xebialabs.xltest.ci.server.XLTestServerFactory;
-import com.xebialabs.xltest.ci.server.domain.TestSpecification;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -44,12 +43,14 @@ import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
+import org.apache.commons.collections.MapUtils;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collections;
@@ -95,7 +96,9 @@ public class XLTestNotifier extends Notifier {
         // TODO: metadata.put("buildEnvironment", build.getEnvironment(listener));
         // TODO: metadata.put("ciServerVersion", Jenkins.getVersion().toString());
 
-        for(TestSpecificationDescribable ts : testSpecifications) {
+        listener.getLogger().printf("[XL Test] Uploading test run data to '%s'\n", getDescriptor().getServerUrl());
+
+        for (TestSpecificationDescribable ts : testSpecifications) {
             Map<String, Object> metadata = new HashMap<String, Object>();
             metadata.put("source", "jenkins");
             metadata.put("serverUrl", Jenkins.getInstance().getRootUrl());
@@ -107,12 +110,27 @@ public class XLTestNotifier extends Notifier {
             metadata.put("executedOn", build.getBuiltOn().getNodeName());   // "" in case of master
             metadata.put("buildParameters", build.getBuildVariables());
 
-            listener.getLogger().printf("[XL Test] Sending back results to XL Test metadata %s", metadata.toString());
-
-            getXLTestServer().uploadTestRun(ts.getTestSpecificationId(), workspace, ts.getIncludes(), ts.getExcludes(), metadata, listener.getLogger());
+            uploadTestRun(ts, metadata, workspace, listener.getLogger());
         }
 
         return true;
+    }
+
+    private void uploadTestRun(TestSpecificationDescribable ts, Map<String, Object> metadata, FilePath workspace, PrintStream logger) throws InterruptedException {
+        try {
+            // TODO: title would be nicer..
+            logger.printf("[XL Test] Uploading test run for test specification with id '%s'\n", ts.getTestSpecificationId());
+            logger.printf("[XL Test] data:\n%s", metadata.toString());
+
+            getXLTestServer().uploadTestRun(ts.getTestSpecificationId(), workspace, ts.getIncludes(), ts.getExcludes(), metadata, logger);
+        } catch (RuntimeException e) {
+            // this probably means the build was aborted in some way...
+            logger.printf("[XL Test] Error uploading: %s\n", e.getMessage());
+        } catch (InterruptedException e) {
+            // this probably means the build was aborted in some way...
+            logger.println("[XL Test] Upload interrupted...");
+            throw e;
+        }
     }
 
     @Override

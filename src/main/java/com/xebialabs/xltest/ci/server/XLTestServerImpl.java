@@ -48,7 +48,7 @@ import static org.apache.commons.io.IOUtils.closeQuietly;
 public class XLTestServerImpl implements XLTestServer {
     private final static Logger LOGGER = Logger.getLogger(XLTestServerImpl.class.getName());
 
-    public static final String XL_TEST_LOG_PREFIX = "[XL Test]";
+    public static final String XL_TEST_LOG_FORMAT = "[XL Test] [%s] %s\n";
     public static final TypeReference<Map<String, TestSpecification>> MAP_OF_TESTSPECIFICATION = new TypeReference<Map<String, TestSpecification>>() {
     };
 
@@ -139,7 +139,7 @@ public class XLTestServerImpl implements XLTestServer {
     }
 
     @Override
-    public void uploadTestRun(String testSpecificationId, FilePath workspace, String includes, String excludes, Map<String, Object> metadata, final PrintStream logger) throws InterruptedException {
+    public void uploadTestRun(String testSpecificationId, FilePath workspace, String includes, String excludes, Map<String, Object> metadata, PrintStream logger) throws InterruptedException {
         try {
             log(logger, Level.INFO, format("Trying to send workspace: '%s' to XL Test on URL: '%s'", workspace.toURI().toString(), serverUrl.toString()));
             log(logger, Level.INFO, format("Going to scan dir: '%s' for files to zip using include pattern: '%s' and exclude pattern '%s'",
@@ -171,7 +171,7 @@ public class XLTestServerImpl implements XLTestServer {
                 case 401:
                     throw new IllegalStateException("Credentials are invalid");
                 case 404:
-                    throw new IllegalStateException("URL is invalid or server is not running");
+                    throw new IllegalArgumentException("Test specificaton '" + testSpecificationId + "' does not exists?");
                 default:
                     throw new IllegalStateException("Unknown error. Status code: " + response.code() + ". Response message: " + response.toString());
             }
@@ -210,7 +210,7 @@ public class XLTestServerImpl implements XLTestServer {
 
     private void log(PrintStream logger, Level level, String message, Exception e) {
         LOGGER.log(level, message);
-        logger.println(XL_TEST_LOG_PREFIX + " [" + level.toString() + "] " + message);
+        logger.printf(XL_TEST_LOG_FORMAT, level, message);
         if (e != null) {
             e.printStackTrace(logger);
         }
@@ -263,7 +263,7 @@ public class XLTestServerImpl implements XLTestServer {
                 // the archive function 'conveniently' closes our outputstream
                 os = new CloseIgnoringOutputStream(sink.outputStream());
                 int numberOfFilesArchived = workspace.archive(factory, os, scanner);
-                log(logger, Level.INFO, format("Archived %d files", numberOfFilesArchived));
+                log(logger, Level.INFO, format("Zipped %d files", numberOfFilesArchived));
             } catch (InterruptedException e) {
                 throw new RuntimeException("Writing of zip interrupted.", e);
             } finally {
