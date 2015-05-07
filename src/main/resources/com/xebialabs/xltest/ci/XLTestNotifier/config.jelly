@@ -5,14 +5,20 @@
     <!-- TODO: once selected display some things like qualification, tooltype etc. -->
     <!-- TODO: if pattern is not set show the default pattern for the tool on the testspec -->
     <j:if test="${descriptor.getServerUrl() == null || descriptor.getServerUrl().isEmpty()}">
-        <div>
-            <b>Note:</b>
-            To proceed you need to configure a XL Test instance
-            <a href="${rootURL}/configure">here</a>, and inside XL Test
-            at least one
-            <i>test specification</i>
-            must be set up.
-        </div>
+        <f:block>
+            <div>
+                To upload results to XL Test you first need to configure:
+                <ul>
+                    <li>a XL Test instance in Jenkins. This you can do
+                        <a href="${rootURL}/configure">here</a>.
+                    </li>
+                    <li>a
+                        <i>test specification</i>
+                        inside XL Test.
+                    </li>
+                </ul>
+            </div>
+        </f:block>
     </j:if>
     <j:if test="${descriptor.getServerUrl() != null &amp;&amp; !descriptor.getServerUrl().isEmpty()}">
         <f:entry title="${%Test Specifications}" description="Test specifications" field="testSpecifications">
