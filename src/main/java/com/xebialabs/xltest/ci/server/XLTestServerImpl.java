@@ -140,9 +140,11 @@ public class XLTestServerImpl implements XLTestServer {
 
     @Override
     public void uploadTestRun(String testSpecificationId, FilePath workspace, String includes, String excludes, Map<String, Object> metadata, PrintStream logger) throws InterruptedException {
+        if (testSpecificationId == null || testSpecificationId.isEmpty()) {
+            throw new IllegalArgumentException("No test specification id specified. Does the test specification still exist in XL Test?");
+        }
         try {
-            log(logger, Level.INFO, format("Trying to send workspace: '%s' to XL Test on URL: '%s'", workspace.toURI().toString(), serverUrl.toString()));
-            log(logger, Level.INFO, format("Going to scan dir: '%s' for files to zip using include pattern: '%s' and exclude pattern '%s'",
+            log(logger, Level.INFO, format("Collecting files from '%s' using include pattern: '%s' and exclude pattern '%s'",
                     workspace.getRemote(), includes, excludes));
 
             DirScanner scanner = new DirScanner.Glob(includes, excludes);
