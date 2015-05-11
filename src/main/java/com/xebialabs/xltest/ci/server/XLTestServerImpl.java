@@ -86,9 +86,9 @@ public class XLTestServerImpl implements XLTestServer {
         }
     }
 
-    private Request createRequestFor(String relativeUrl) {
+    private Request createRequestFor(String relativeUrl, String serverUrl) {
         try {
-            URL url = createUrl(relativeUrl);
+            URL url = createUrl(relativeUrl, serverUrl);
 
             return new Request.Builder()
                     .url(url)
@@ -103,8 +103,8 @@ public class XLTestServerImpl implements XLTestServer {
         }
     }
 
-    private URL createUrl(String relativeUrl) throws MalformedURLException, URISyntaxException {
-        return new URI(serverUrl.toString() + relativeUrl).toURL();
+    private URL createUrl(String relativeUrl, String serverUrl) throws MalformedURLException, URISyntaxException {
+        return new URI(serverUrl + relativeUrl).toURL();
     }
 
     private String createCredential() {
@@ -115,7 +115,11 @@ public class XLTestServerImpl implements XLTestServer {
     public void checkConnection() {
         try {
             LOGGER.info("Checking connection to " + serverUrl);
-            Request request = createRequestFor(API_CONNECTION_CHECK);
+            String serverUrl = this.serverUrl.toString();
+            if (serverUrl.length() > 1 && serverUrl.endsWith("/")) {
+                serverUrl = serverUrl.substring(0, serverUrl.length() - 1);
+            }
+            Request request = createRequestFor(API_CONNECTION_CHECK, serverUrl);
 
             Response response = client.newCall(request).execute();
             switch (response.code()) {
@@ -157,7 +161,7 @@ public class XLTestServerImpl implements XLTestServer {
                     .build();
 
             Request request = new Request.Builder()
-                    .url(createUrl(API_IMPORT + "/" + testSpecificationId))
+                    .url(createUrl(API_IMPORT + "/" + testSpecificationId, serverUrl.toString()))
                     .header("Accept", APPLICATION_JSON_UTF_8)
                     .header("Authorization", createCredential())
                     .post(body)
@@ -194,7 +198,7 @@ public class XLTestServerImpl implements XLTestServer {
     @Override
     public Map<String, TestSpecification> getTestSpecifications() {
         try {
-            Request request = createRequestFor(API_TESTSPECIFICATIONS_EXTENDED);
+            Request request = createRequestFor(API_TESTSPECIFICATIONS_EXTENDED, serverUrl.toString());
             Response response = client.newCall(request).execute();
 
             ObjectMapper mapper = createMapper();
