@@ -1,7 +1,6 @@
 <!-- post-build step -->
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
-
     <!-- TODO: once selected display some things like qualification, tooltype etc. -->
     <!-- TODO: if pattern is not set show the default pattern for the tool on the testspec -->
     <j:if test="${descriptor.getServerUrl() == null || descriptor.getServerUrl().isEmpty()}">
@@ -22,6 +21,7 @@
     </j:if>
     <j:if test="${descriptor.getServerUrl() != null &amp;&amp; !descriptor.getServerUrl().isEmpty()}">
         <f:entry title="${%Test Specifications}" field="testSpecifications">
+
             <f:repeatable var="testSpecification" field="testSpecifications">
                 <table width="100%">
                     <f:entry field="testSpecificationId" title="${%Choose test specification}">

@@ -9,6 +9,7 @@ public class TestSpecification {
 
     private Project project;
     private Qualification qualification;
+    private TestTool testTool;
 
     public String getId() {
         return id;
@@ -48,6 +49,14 @@ public class TestSpecification {
 
     public void setQualification(Qualification qualification) {
         this.qualification = qualification;
+    }
+
+    public TestTool getTestTool() {
+        return testTool;
+    }
+
+    public void setTestTool(TestTool testTool) {
+        this.testTool = testTool;
     }
 
     @Override
