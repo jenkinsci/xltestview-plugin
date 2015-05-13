@@ -9,30 +9,28 @@ import hudson.Extension;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.util.ListBoxModel;
-import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.bind.JavaScriptMethod;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
-import java.util.UUID;
 
 import static java.lang.String.format;
 
-// TODO: default include pattern selecteren
+// TODO: select default include pattern
 public class TestSpecificationDescribable extends AbstractDescribableImpl<TestSpecificationDescribable> {
+    private static final Logger LOG = LoggerFactory.getLogger(TestSpecificationDescribable.class);
 
     private final String testSpecificationId;
     private final String includes;
     private final String excludes;
-    private final String uuid;
 
     @DataBoundConstructor
     public TestSpecificationDescribable(String testSpecificationId, String includes, String excludes) {
-        System.out.printf("constructor %s %s %s\n", testSpecificationId, includes, excludes);
+        LOG.debug("TestSpecificationDescribable testSpecId={} includes={} excludes={}", testSpecificationId, includes, excludes);
         this.includes = includes;
         this.excludes = excludes;
         this.testSpecificationId = testSpecificationId;
-        this.uuid = UUID.randomUUID().toString();
     }
 
     // this getter must correspond with the name of the field in the config.jelly else the selected value is not filled in
@@ -45,9 +43,6 @@ public class TestSpecificationDescribable extends AbstractDescribableImpl<TestSp
     }
 
     public String getIncludes() {
-        if (StringUtils.isBlank(includes)) {
-            return "the default value";
-        }
         return includes;
     }
 
@@ -74,11 +69,6 @@ public class TestSpecificationDescribable extends AbstractDescribableImpl<TestSp
             return "TestSpecification";
         }
 
-        @JavaScriptMethod
-        public String fooText() {
-            return "foo text baby! yeah! - " + UUID.randomUUID().toString();
-        }
-
         public ListBoxModel doFillTestSpecificationIdItems() {
             ListBoxModel items = new ListBoxModel();
 
@@ -98,11 +88,11 @@ public class TestSpecificationDescribable extends AbstractDescribableImpl<TestSp
                 if (!isSetOfTestSpecifications(testSpecification)) {
                     items.add(
                             format("%s > %s (%s, %s) - %s",
-                                testSpecification.getProject().getTitle(),
-                                testSpecification.getTitle(),
-                                testSpecification.getTestTool().getName(),
-                                testSpecification.getTestTool().getDefaultSearchPattern(),
-                                testSpecification.getQualification().getDescription()
+                                    testSpecification.getProject().getTitle(),
+                                    testSpecification.getTitle(),
+                                    testSpecification.getTestTool().getName(),
+                                    testSpecification.getTestTool().getDefaultSearchPattern(),
+                                    testSpecification.getQualification().getDescription()
                             ),
                             t.getKey()
                     );

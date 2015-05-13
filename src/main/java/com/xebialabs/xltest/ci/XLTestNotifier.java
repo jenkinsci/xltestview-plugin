@@ -47,6 +47,8 @@ import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -56,17 +58,15 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static com.cloudbees.plugins.credentials.CredentialsProvider.lookupCredentials;
 import static hudson.util.FormValidation.error;
 import static hudson.util.FormValidation.ok;
 
 // TODO: should use Recorder if we want to fail the build based upon a Qualification see ArtifactArchiver
-// TODO: clean up logging / system.out
 public class XLTestNotifier extends Notifier {
-    private final static Logger LOGGER = Logger.getLogger(XLTestNotifier.class.getName());
+
+    private final static Logger LOG = LoggerFactory.getLogger(XLTestNotifier.class);
 
     public static final SchemeRequirement HTTP_SCHEME = new SchemeRequirement("http");
     public static final SchemeRequirement HTTPS_SCHEME = new SchemeRequirement("https");
@@ -76,6 +76,7 @@ public class XLTestNotifier extends Notifier {
     // constructor arguments must match config.jelly fields
     @DataBoundConstructor
     public XLTestNotifier(List<TestSpecificationDescribable> testSpecifications) {
+        LOG.debug("XLTestNotifier testSpecifications={}", testSpecifications);
         // System.out.printf("constructor %s\n", testSpecifications);
         this.testSpecifications = testSpecifications;
     }
@@ -102,7 +103,7 @@ public class XLTestNotifier extends Notifier {
 
         String rootUrl = Jenkins.getInstance().getRootUrl();
         if (rootUrl == null) {
-            LOGGER.log(Level.SEVERE, "Unable to determine root URL for jenkins instance aborting post build step.");
+            LOG.error("Unable to determine root URL for jenkins instance aborting post build step.");
             listener.getLogger().printf("[XL Test] unable to determine root URL for the jenkins instance\n");
             throw new IllegalStateException("Unable to determine root URL for jenkins instance. Aborting XL Test post build step.");
         }
@@ -166,8 +167,7 @@ public class XLTestNotifier extends Notifier {
     }
 
     public static StandardUsernamePasswordCredentials lookupSystemCredentials(String credentialsId) {
-
-        System.out.println("lookupCred " + credentialsId);
+        LOG.debug("lookupSystemCredentials id={}", credentialsId);
 
         return CredentialsMatchers.firstOrNull(
                 lookupCredentials(StandardUsernamePasswordCredentials.class, Jenkins.getInstance(), ACL.SYSTEM,
@@ -195,7 +195,7 @@ public class XLTestNotifier extends Notifier {
          */
         @Override
         public boolean configure(StaplerRequest req, JSONObject json) throws FormException {
-            System.out.printf("XLTestDescriptor.configure(%s)", json.toString());
+            LOG.debug("XLTestDescriptor.configure({})", json);
 
             serverUrl = json.get("serverUrl").toString();
             proxyUrl = json.get("proxyUrl").toString();

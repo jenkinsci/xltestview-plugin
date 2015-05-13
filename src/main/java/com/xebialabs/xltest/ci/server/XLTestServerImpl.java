@@ -32,6 +32,7 @@ import hudson.FilePath;
 import hudson.util.DirScanner;
 import hudson.util.io.ArchiverFactory;
 import okio.BufferedSink;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -39,14 +40,12 @@ import java.io.PrintStream;
 import java.net.*;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static java.lang.String.format;
 import static org.apache.commons.io.IOUtils.closeQuietly;
 
 public class XLTestServerImpl implements XLTestServer {
-    private final static Logger LOGGER = Logger.getLogger(XLTestServerImpl.class.getName());
+    private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(XLTestServerImpl.class);
 
     public static final String XL_TEST_LOG_FORMAT = "[XL Test] [%s] %s\n";
     public static final TypeReference<Map<String, TestSpecification>> MAP_OF_TESTSPECIFICATION = new TypeReference<Map<String, TestSpecification>>() {
@@ -114,7 +113,7 @@ public class XLTestServerImpl implements XLTestServer {
     @Override
     public void checkConnection() {
         try {
-            LOGGER.info("Checking connection to " + serverUrl);
+            LOG.info("Checking connection to {}", serverUrl);
             String serverUrl = this.serverUrl.toString();
             if (serverUrl.length() > 1 && serverUrl.endsWith("/")) {
                 serverUrl = serverUrl.substring(0, serverUrl.length() - 1);
@@ -148,7 +147,7 @@ public class XLTestServerImpl implements XLTestServer {
             throw new IllegalArgumentException("No test specification id specified. Does the test specification still exist in XL Test?");
         }
         try {
-            log(logger, Level.INFO, format("Collecting files from '%s' using include pattern: '%s' and exclude pattern '%s'",
+            logInfo(logger, format("Collecting files from '%s' using include pattern: '%s' and exclude pattern '%s'",
                     workspace.getRemote(), includes, excludes));
 
             DirScanner scanner = new DirScanner.Glob(includes, excludes);
@@ -172,7 +171,7 @@ public class XLTestServerImpl implements XLTestServer {
                 case 200:
                     return;
                 case 304:
-                    log(logger, Level.WARNING, "No new results were detected. Nothing was imported.");
+                    logWarn(logger, "No new results were detected. Nothing was imported.");
                     return;
                 case 401:
                     throw new IllegalStateException("Credentials are invalid");
@@ -203,22 +202,26 @@ public class XLTestServerImpl implements XLTestServer {
 
             ObjectMapper mapper = createMapper();
             Map<String, TestSpecification> testSpecifications = mapper.readValue(response.body().byteStream(), MAP_OF_TESTSPECIFICATION);
-            LOGGER.finer("Received test specifications: " + testSpecifications);
+            LOG.debug("Received test specifications: {}", testSpecifications);
             return testSpecifications;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private void log(PrintStream logger, Level level, String message) {
-        log(logger, level, message, null);
+    private void logInfo(PrintStream logger, String message) {
+        LOG.info(message);
+        logger.printf(XL_TEST_LOG_FORMAT, "INFO", message);
     }
 
-    private void log(PrintStream logger, Level level, String message, Exception e) {
-        LOGGER.log(level, message);
-        logger.printf(XL_TEST_LOG_FORMAT, level, message);
+    private void logWarn(PrintStream logger, String message) {
+        LOG.warn(message);
+        logger.printf(XL_TEST_LOG_FORMAT, "WARN", message);
+    }
+
+    private void log(PrintStream logger, String level, String message, Exception e) {
         if (e != null) {
-            e.printStackTrace(logger);
+            LOG.error("Exception ", e);
         }
     }
 
@@ -269,7 +272,7 @@ public class XLTestServerImpl implements XLTestServer {
                 // the archive function 'conveniently' closes our outputstream
                 os = new CloseIgnoringOutputStream(sink.outputStream());
                 int numberOfFilesArchived = workspace.archive(factory, os, scanner);
-                log(logger, Level.INFO, format("Zipped %d files", numberOfFilesArchived));
+                logInfo(logger, format("Zipped %d files", numberOfFilesArchived));
             } catch (InterruptedException e) {
                 throw new RuntimeException("Writing of zip interrupted.", e);
             } finally {
