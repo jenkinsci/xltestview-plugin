@@ -124,25 +124,31 @@ public class XLTestNotifier extends Notifier {
             metadata.put("executedOn", build.getBuiltOn().getNodeName());   // "" in case of master
             metadata.put("buildParameters", build.getBuildVariables());
 
-            uploadTestRun(ts, metadata, workspace, listener.getLogger());
+            try {
+                uploadTestRun(ts, metadata, workspace, listener.getLogger());
+            } catch (Exception e) {
+                build.setResult(Result.UNSTABLE);
+                listener.getLogger().printf("[XL Test] Marking build UNSTABLE. Reason: Expected OK result when uploading data. Got: %s\n", e);
+            }
         }
 
         return true;
     }
 
-    private void uploadTestRun(TestSpecificationDescribable ts, Map<String, Object> metadata, FilePath workspace, PrintStream logger) throws InterruptedException {
+    private void uploadTestRun(TestSpecificationDescribable ts, Map<String, Object> metadata, FilePath workspace, PrintStream logger) throws InterruptedException, IOException {
         try {
             // TODO: title would be nicer..
             logger.printf("[XL Test] Uploading test run for test specification with id '%s'\n", ts.getTestSpecificationId());
             logger.printf("[XL Test] data:\n%s\n", metadata.toString());
 
             getXLTestServer().uploadTestRun(ts.getTestSpecificationId(), workspace, ts.getIncludes(), ts.getExcludes(), metadata, logger);
-        } catch (RuntimeException e) {
+        } catch (IOException e) {
             // this probably means the build was aborted in some way...
             logger.printf("[XL Test] Error uploading: %s\n", e.getMessage());
+            throw e;
         } catch (InterruptedException e) {
             // this probably means the build was aborted in some way...
-            logger.println("[XL Test] Upload interrupted...");
+            logger.printf("[XL Test] Upload interrupted: %s\n", e.getMessage());
             throw e;
         }
     }

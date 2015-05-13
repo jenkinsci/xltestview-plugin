@@ -142,7 +142,7 @@ public class XLTestServerImpl implements XLTestServer {
     }
 
     @Override
-    public void uploadTestRun(String testSpecificationId, FilePath workspace, String includes, String excludes, Map<String, Object> metadata, PrintStream logger) throws InterruptedException {
+    public void uploadTestRun(String testSpecificationId, FilePath workspace, String includes, String excludes, Map<String, Object> metadata, PrintStream logger) throws IOException, InterruptedException {
         if (testSpecificationId == null || testSpecificationId.isEmpty()) {
             throw new IllegalArgumentException("No test specification id specified. Does the test specification still exist in XL Test?");
         }
@@ -169,10 +169,10 @@ public class XLTestServerImpl implements XLTestServer {
             Response response = client.newCall(request).execute();
             switch (response.code()) {
                 case 200:
-                    logWarn(logger, "[" + testSpecificationId + "] - Sent data successfully");
+                    logInfo(logger, "Sent data successfully");
                     return;
                 case 304:
-                    logWarn(logger, "[" + testSpecificationId + "] - No new results were detected. Nothing was imported.");
+                    logWarn(logger, "No new results were detected. Nothing was imported.");
                     throw new IllegalStateException("No new results were detected. Nothing was imported.");
                 case 401:
                     throw new IllegalStateException("Credentials are invalid");
@@ -184,7 +184,7 @@ public class XLTestServerImpl implements XLTestServer {
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException(e);
         } catch (IOException e) {
-            throw new RuntimeException("I/O error uploading test run data to " + serverUrl.toString(), e);
+            throw new IOException("I/O error uploading test run data to " + serverUrl.toString(), e);
         }
     }
 

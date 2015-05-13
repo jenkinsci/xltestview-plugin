@@ -25,12 +25,13 @@ package com.xebialabs.xltest.ci.server;
 import com.xebialabs.xltest.ci.server.domain.TestSpecification;
 import hudson.FilePath;
 
+import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Map;
 
 public interface XLTestServer {
     void checkConnection();
     Map<String, TestSpecification> getTestSpecifications();
-    void uploadTestRun(String testSpecificationId, FilePath workspace, String includes, String excludes, Map<String, Object> metadata, PrintStream logger) throws InterruptedException;
+    void uploadTestRun(String testSpecificationId, FilePath workspace, String includes, String excludes, Map<String, Object> metadata, PrintStream logger) throws InterruptedException, IOException;
     Object getVersion();
 }
