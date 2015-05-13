@@ -169,14 +169,15 @@ public class XLTestServerImpl implements XLTestServer {
             Response response = client.newCall(request).execute();
             switch (response.code()) {
                 case 200:
+                    logWarn(logger, "[" + testSpecificationId + "] - Sent data successfully");
                     return;
                 case 304:
-                    logWarn(logger, "No new results were detected. Nothing was imported.");
-                    return;
+                    logWarn(logger, "[" + testSpecificationId + "] - No new results were detected. Nothing was imported.");
+                    throw new IllegalStateException("No new results were detected. Nothing was imported.");
                 case 401:
                     throw new IllegalStateException("Credentials are invalid");
                 case 404:
-                    throw new IllegalArgumentException("Test specificaton '" + testSpecificationId + "' does not exists?");
+                    throw new IllegalArgumentException("Test specification '" + testSpecificationId + "' does not exists?");
                 default:
                     throw new IllegalStateException("Unknown error. Status code: " + response.code() + ". Response message: " + response.toString());
             }
