@@ -86,13 +86,17 @@ public class TestSpecificationDescribable extends AbstractDescribableImpl<TestSp
             for (Map.Entry<String, TestSpecification> t : ts.entrySet()) {
                 TestSpecification testSpecification = t.getValue();
                 if (!isSetOfTestSpecifications(testSpecification)) {
+                    String qualificationDescription = "no qualification";
+                    if (testSpecification.getQualification() != null) {
+                        qualificationDescription = testSpecification.getQualification().getDescription();
+                    }
                     items.add(
                             format("%s > %s (%s, %s) - %s",
                                     testSpecification.getProject().getTitle(),
                                     testSpecification.getTitle(),
                                     testSpecification.getTestTool().getName(),
                                     testSpecification.getTestTool().getDefaultSearchPattern(),
-                                    testSpecification.getQualification().getDescription()
+                                    qualificationDescription
                             ),
                             t.getKey()
                     );
