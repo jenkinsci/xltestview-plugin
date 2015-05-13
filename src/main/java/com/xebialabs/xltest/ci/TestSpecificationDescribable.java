@@ -70,11 +70,9 @@ public class TestSpecificationDescribable extends AbstractDescribableImpl<TestSp
         }
 
         public ListBoxModel doFillTestSpecificationIdItems() {
-            ListBoxModel items = new ListBoxModel();
-
             // no use if no url/creds
             if (xlTestDescriptor.getServerUrl().isEmpty() || xlTestDescriptor.getCredentialsId().isEmpty()) {
-                return items;
+                return new ListBoxModel();
             }
 
             XLTestServer xlTest = XLTestServerFactory.newInstance(
@@ -83,20 +81,21 @@ public class TestSpecificationDescribable extends AbstractDescribableImpl<TestSp
                     XLTestNotifier.lookupSystemCredentials(xlTestDescriptor.getCredentialsId()));
 
             Map<String, TestSpecification> ts = xlTest.getTestSpecifications();
+            return getSpecificationOptions(ts);
+        }
+
+        public static ListBoxModel getSpecificationOptions(Map<String, TestSpecification> ts) {
+            ListBoxModel items = new ListBoxModel();
             for (Map.Entry<String, TestSpecification> t : ts.entrySet()) {
                 TestSpecification testSpecification = t.getValue();
                 if (!isSetOfTestSpecifications(testSpecification)) {
-                    String qualificationDescription = "no qualification";
-                    if (testSpecification.getQualification() != null) {
-                        qualificationDescription = testSpecification.getQualification().getDescription();
-                    }
                     items.add(
                             format("%s > %s (%s, %s) - %s",
                                     testSpecification.getProject().getTitle(),
                                     testSpecification.getTitle(),
-                                    testSpecification.getTestTool().getName(),
-                                    testSpecification.getTestTool().getDefaultSearchPattern(),
-                                    qualificationDescription
+                                    testSpecification.getTestToolName(),
+                                    testSpecification.getTestToolDefaultSearchPattern(),
+                                    testSpecification.getQualificationDescription()
                             ),
                             t.getKey()
                     );
@@ -106,7 +105,7 @@ public class TestSpecificationDescribable extends AbstractDescribableImpl<TestSp
             return items;
         }
 
-        private boolean isSetOfTestSpecifications(TestSpecification testSpecification) {
+        static private boolean isSetOfTestSpecifications(TestSpecification testSpecification) {
             // TODO: this should be a check on the type systems
             return "xltest.TestSpecificationSet".equals(testSpecification.getType());
         }

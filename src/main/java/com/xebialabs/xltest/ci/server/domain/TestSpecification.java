@@ -69,4 +69,25 @@ public class TestSpecification {
                 .add("qualification", qualification)
                 .toString();
     }
+
+    public String getQualificationDescription() {
+        if (qualification != null) {
+            return qualification.getDescription();
+        }
+        return "no qualification present";
+    }
+
+    public String getTestToolName() {
+        if (testTool != null) {
+            return testTool.getName();
+        }
+        return "Unknown test tool";
+    }
+
+    public String getTestToolDefaultSearchPattern() {
+        if (testTool != null) {
+            return testTool.getDefaultSearchPattern();
+        }
+        return "Unknown search pattern";
+    }
 }

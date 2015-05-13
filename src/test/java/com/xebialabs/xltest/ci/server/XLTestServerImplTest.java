@@ -3,10 +3,11 @@ package com.xebialabs.xltest.ci.server;
 import com.squareup.okhttp.mockwebserver.MockResponse;
 import com.squareup.okhttp.mockwebserver.MockWebServer;
 import com.squareup.okhttp.mockwebserver.RecordedRequest;
+import com.xebialabs.xltest.ci.TestSpecificationDescribable;
 import com.xebialabs.xltest.ci.server.authentication.UsernamePassword;
 import com.xebialabs.xltest.ci.server.domain.TestSpecification;
 import hudson.FilePath;
-import jenkins.model.Jenkins;
+import hudson.util.ListBoxModel;
 import org.mockito.Mockito;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -28,7 +29,7 @@ import static org.testng.Assert.assertTrue;
 
 public class XLTestServerImplTest {
     // TODO: this is from the demo data and not 'the whole truth'
-    private static final String TEST_SPEC_RESPONSE = "{\"regressionTests\":{\"id\":\"regressionTests\",\"project\":{\"id\":\"DemoProject\",\"title\":\"Demo Project\",\"type\":\"xltest.Project\"},\"qualification\":{\"description\":\"Description unavailable\",\"type\":\"xltest.DefaultFunctionalTestsQualifier\"},\"title\":\"regressionTests\",\"type\":\"xltest.ShowCaseTestSpecification\"},\"demoGatling\":{\"id\":\"demoGatling\",\"project\":{\"id\":\"DemoProject\",\"title\":\"Demo Project\",\"type\":\"xltest.Project\"},\"qualification\":{\"description\":\"Description unavailable\",\"type\":\"xltest.DefaultPerformanceTestsQualifier\"},\"title\":\"demoGatling\",\"type\":\"xltest.ShowCaseTestSpecification\"},\"functionalTestsComponentA\":{\"id\":\"functionalTestsComponentA\",\"project\":{\"id\":\"DemoProject\",\"title\":\"Demo Project\",\"type\":\"xltest.Project\"},\"qualification\":{\"description\":\"Description unavailable\",\"type\":\"xltest.DefaultFunctionalTestsQualifier\"},\"title\":\"functionalTestsComponentA\",\"type\":\"xltest.ShowCaseTestSpecification\"},\"f3850327-69df-4f01-b063-e5d367a960f8\":{\"id\":\"f3850327-69df-4f01-b063-e5d367a960f8\",\"project\":{\"id\":\"DemoProject\",\"title\":\"Demo Project\",\"type\":\"xltest.Project\"},\"title\":\"allMyTests\",\"type\":\"xltest.TestSpecificationSet\"},\"calculatorTestsComponentB\":{\"id\":\"calculatorTestsComponentB\",\"project\":{\"id\":\"DemoProject\",\"title\":\"Demo Project\",\"type\":\"xltest.Project\"},\"qualification\":{\"description\":\"Description unavailable\",\"type\":\"xltest.DefaultFunctionalTestsQualifier\"},\"title\":\"calculatorTestsComponentB\",\"type\":\"xltest.ShowCaseTestSpecification\"},\"performance tests (old) for Demo\":{\"id\":\"performance tests (old) for Demo\",\"project\":{\"id\":\"DemoProject\",\"title\":\"Demo Project\",\"type\":\"xltest.Project\"},\"qualification\":{\"description\":\"Description unavailable\",\"type\":\"xltest.DefaultPerformanceTestsQualifier\"},\"title\":\"performance tests (old) for Demo\",\"type\":\"xltest.ShowCaseTestSpecification\"}}";
+    private static final String TEST_SPEC_RESPONSE = "{\"regressionTests\":{\"id\":\"regressionTests\",\"project\":{\"id\":\"DemoProject\",\"title\":\"Demo Project\",\"type\":\"xltest.Project\"},\"qualification\":{\"description\":\"Description unavailable\",\"type\":\"xltest.DefaultFunctionalTestsQualifier\"},\"title\":\"regressionTests\",\"type\":\"xltest.ShowCaseTestSpecification\"},\"demoGatling\":{\"id\":\"demoGatling\",\"project\":{\"id\":\"DemoProject\",\"title\":\"Demo Project\",\"type\":\"xltest.Project\"},\"qualification\":{\"description\":\"Description unavailable\",\"type\":\"xltest.DefaultPerformanceTestsQualifier\"},\"title\":\"demoGatling\",\"type\":\"xltest.ShowCaseTestSpecification\"},\"functionalTestsComponentA\":{\"id\":\"functionalTestsComponentA\",\"project\":{\"id\":\"DemoProject\",\"title\":\"Demo Project\",\"type\":\"xltest.Project\"},\"qualification\":{\"description\":\"Description unavailable\",\"type\":\"xltest.DefaultFunctionalTestsQualifier\"},\"title\":\"functionalTestsComponentA\",\"type\":\"xltest.ShowCaseTestSpecification\"},\"f3850327-69df-4f01-b063-e5d367a960f8\":{\"id\":\"f3850327-69df-4f01-b063-e5d367a960f8\",\"project\":{\"id\":\"DemoProject\",\"title\":\"Demo Project\",\"type\":\"xltest.Project\"},\"title\":\"allMyTests\",\"type\":\"xltest.TestSpecificationSet\"},\"calculatorTestsComponentB\":{\"id\":\"calculatorTestsComponentB\",\"project\":{\"id\":\"DemoProject\",\"title\":\"Demo Project\",\"type\":\"xltest.Project\"},\"qualification\":{\"description\":\"Description unavailable\",\"type\":\"xltest.DefaultFunctionalTestsQualifier\"},\"title\":\"calculatorTestsComponentB\",\"type\":\"xltest.ShowCaseTestSpecification\"},\"performance tests (old) for Demo\":{\"id\":\"performance tests (old) for Demo\",\"project\":{\"id\":\"DemoProject\",\"title\":\"Demo Project\",\"type\":\"xltest.Project\"},\"title\":\"performance tests (old) for Demo\",\"type\":\"xltest.ShowCaseTestSpecification\"}}";
 
     MockWebServer xltStub;
     XLTestServerImpl xlTestServer;
@@ -79,6 +80,20 @@ public class XLTestServerImplTest {
         assertEquals(request.getHeader("accept"), "application/json; charset=utf-8");
         assertEquals(request.getHeader("authorization"), "Basic YWRtaW46YWRtaW4=");
         assertEquals(request.getBody().readUtf8(), "");
+    }
+
+    @Test
+    public void fillsTestSpecificationIdItems() {
+        xltStub.enqueue(new MockResponse()
+                .addHeader("Content-Type", "application/json; charset=utf-8")
+                .setBody(TEST_SPEC_RESPONSE));
+
+        Map<String, TestSpecification> testSpecifications = xlTestServer.getTestSpecifications();
+        assertEquals(testSpecifications.size(), 6);
+
+        ListBoxModel result = TestSpecificationDescribable.TestSpecificationDescriptor.getSpecificationOptions(testSpecifications);
+
+        assertEquals(result.size(), 5); // because we don't count the one superset in the list
     }
 
     @Test
