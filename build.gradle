@@ -67,7 +67,7 @@ localizer.dependsOn deleteGeneratedSrcLocalizer
 
 jenkinsPlugin {
     coreVersion = '1.580.3' // we need to support LTS versions
-    displayName = "XebiaLabs XL Test Plugin"
+    displayName = "XL Test Plugin"
     url = 'https://wiki.jenkins-ci.org/display/JENKINS/XL+Test+Plugin'
     gitHubUrl = 'https://github.com/jenkinsci/xltest-plugin'
 
