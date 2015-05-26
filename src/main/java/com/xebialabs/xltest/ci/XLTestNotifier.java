@@ -88,8 +88,9 @@ public class XLTestNotifier extends Notifier {
 
     @Override
     public boolean perform(final AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
+        PrintStream logger = listener.getLogger();
         if (!build.getResult().completeBuild) {
-            listener.getLogger().printf("[XL Test] Not sending test run data since the build was aborted\n");
+            logger.printf("[XL Test] Not sending test run data since the build was aborted\n");
             // according to javadoc we have to do this...
             // TODO: or throw an exception?
             return true;
@@ -99,12 +100,12 @@ public class XLTestNotifier extends Notifier {
         // TODO: metadata.put("buildEnvironment", build.getEnvironment(listener));
         // TODO: metadata.put("ciServerVersion", Jenkins.getVersion().toString());
 
-        listener.getLogger().printf("[XL Test] Uploading test run data to '%s'\n", getDescriptor().getServerUrl());
+        logger.printf("[XL Test] Uploading test run data to '%s'\n", getDescriptor().getServerUrl());
 
         String rootUrl = Jenkins.getInstance().getRootUrl();
         if (rootUrl == null) {
             LOG.error("Unable to determine root URL for jenkins instance aborting post build step.");
-            listener.getLogger().printf("[XL Test] unable to determine root URL for the jenkins instance\n");
+            logger.printf("[XL Test] unable to determine root URL for the jenkins instance\n");
             throw new IllegalStateException("Unable to determine root URL for jenkins instance. Aborting XL Test post build step.");
         }
         String jobUrl = rootUrl + build.getProject().getUrl();
@@ -125,10 +126,15 @@ public class XLTestNotifier extends Notifier {
             metadata.put("buildParameters", build.getBuildVariables());
 
             try {
-                uploadTestRun(ts, metadata, workspace, listener.getLogger());
+                uploadTestRun(ts, metadata, workspace, logger);
             } catch (Exception e) {
-                build.setResult(Result.UNSTABLE);
-                listener.getLogger().printf("[XL Test] Marking build UNSTABLE. Reason: Expected OK result when uploading data. Got: %s\n", e);
+                if (build.getResult().equals(Result.FAILURE)) {
+                    logger.printf("[XL Test] Reason: %s\n", e.getMessage());
+                } else {
+                    logger.printf("[XL Test] XL Test changes the build status to UNSTABLE\n");
+                    logger.printf("[XL Test] Reason: %s\n", e.getMessage());
+                    build.setResult(Result.UNSTABLE);
+                }
             }
         }
 

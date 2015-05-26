@@ -27,11 +27,13 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.squareup.okhttp.*;
 import com.xebialabs.xltest.ci.server.authentication.UsernamePassword;
+import com.xebialabs.xltest.ci.server.domain.ImportError;
 import com.xebialabs.xltest.ci.server.domain.TestSpecification;
 import hudson.FilePath;
 import hudson.util.DirScanner;
 import hudson.util.io.ArchiverFactory;
 import okio.BufferedSink;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
@@ -45,7 +47,7 @@ import static java.lang.String.format;
 import static org.apache.commons.io.IOUtils.closeQuietly;
 
 public class XLTestServerImpl implements XLTestServer {
-    private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(XLTestServerImpl.class);
+    private static final Logger LOG = LoggerFactory.getLogger(XLTestServerImpl.class);
 
     public static final String XL_TEST_LOG_FORMAT = "[XL Test] [%s] %s\n";
     public static final TypeReference<Map<String, TestSpecification>> MAP_OF_TESTSPECIFICATION = new TypeReference<Map<String, TestSpecification>>() {
@@ -174,6 +176,10 @@ public class XLTestServerImpl implements XLTestServer {
                 case 304:
                     logWarn(logger, "No new results were detected. Nothing was imported.");
                     throw new IllegalStateException("No new results were detected. Nothing was imported.");
+                case 400:
+                    ObjectMapper mapper = createMapper();
+                    ImportError importError = mapper.readValue(response.body().byteStream(), ImportError.class);
+                    throw new IllegalStateException(importError.getMessage());
                 case 401:
                     throw new IllegalStateException("Credentials are invalid");
                 case 404:
