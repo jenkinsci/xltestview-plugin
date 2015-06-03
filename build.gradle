@@ -42,7 +42,7 @@ apply plugin: 'eclipse'
 apply plugin: 'idea'
 
 group = "com.xebialabs.xltest.ci"
-description = "Aggregate your test results in &lt;a href='http://www.xebialabs.com'&gt;XebiaLabs XL Test&lt;/a&gt;."
+description = "Aggregate your test results in &lt;a href='http://www.xebialabs.com'&gt;XebiaLabs XL TestView&lt;/a&gt;."
 
 // starting with jenkins 1.608 this should move to 1.7
 sourceCompatibility = '1.6'
@@ -67,9 +67,9 @@ localizer.dependsOn deleteGeneratedSrcLocalizer
 
 jenkinsPlugin {
     coreVersion = '1.580.3' // we need to support LTS versions
-    displayName = "XL Test Plugin"
-    url = 'https://wiki.jenkins-ci.org/display/JENKINS/XL+Test+Plugin'
-    gitHubUrl = 'https://github.com/jenkinsci/xltest-plugin'
+    displayName = "XL TestView Plugin"
+    url = 'https://wiki.jenkins-ci.org/display/JENKINS/XL+TestView+Plugin'
+    gitHubUrl = 'https://github.com/jenkinsci/xltestview-plugin'
 
     developers {
         developer {

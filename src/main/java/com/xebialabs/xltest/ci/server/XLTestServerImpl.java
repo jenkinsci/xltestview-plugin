@@ -1,7 +1,7 @@
 /**
  * Copyright (c) 2014-2015, XebiaLabs B.V., All rights reserved.
  * <p/>
- * The XL Test plugin for Jenkins is licensed under the terms of the GPLv2
+ * The XL TestView plugin for Jenkins is licensed under the terms of the GPLv2
  * <http://www.gnu.org/licenses/old-licenses/gpl-2.0.html>, like most XebiaLabs
  * Libraries. There are special exceptions to the terms and conditions of the
  * GPLv2 as it is applied to this software, see the FLOSS License Exception
@@ -49,7 +49,7 @@ import static org.apache.commons.io.IOUtils.closeQuietly;
 public class XLTestServerImpl implements XLTestServer {
     private static final Logger LOG = LoggerFactory.getLogger(XLTestServerImpl.class);
 
-    public static final String XL_TEST_LOG_FORMAT = "[XL Test] [%s] %s\n";
+    public static final String XL_TEST_LOG_FORMAT = "[XL TestView] [%s] %s\n";
     public static final TypeReference<Map<String, TestSpecification>> MAP_OF_TESTSPECIFICATION = new TypeReference<Map<String, TestSpecification>>() {
     };
 
@@ -146,7 +146,7 @@ public class XLTestServerImpl implements XLTestServer {
     @Override
     public void uploadTestRun(String testSpecificationId, FilePath workspace, String includes, String excludes, Map<String, Object> metadata, PrintStream logger) throws IOException, InterruptedException {
         if (testSpecificationId == null || testSpecificationId.isEmpty()) {
-            throw new IllegalArgumentException("No test specification id specified. Does the test specification still exist in XL Test?");
+            throw new IllegalArgumentException("No test specification id specified. Does the test specification still exist in XL TestView?");
         }
         try {
             logInfo(logger, format("Collecting files from '%s' using include pattern: '%s' and exclude pattern '%s'",
