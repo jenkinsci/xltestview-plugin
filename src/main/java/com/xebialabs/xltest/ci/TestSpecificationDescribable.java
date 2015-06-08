@@ -59,10 +59,10 @@ public class TestSpecificationDescribable extends AbstractDescribableImpl<TestSp
     public static class TestSpecificationDescriptor extends Descriptor<TestSpecificationDescribable> {
         /**
          * Stunningly simple solution, if you dig deep enough.
-         * This gets automagically set with the descriptor of the XLTestNotifier relevant to this config bit.
+         * This gets automagically set with the descriptor of the XLTestView relevant to this config bit.
          */
         @Inject
-        private XLTestNotifier.XLTestDescriptor xlTestDescriptor;
+        private XLTestView.XLTestDescriptor xlTestDescriptor;
 
         @Override
         public String getDisplayName() {
@@ -78,7 +78,7 @@ public class TestSpecificationDescribable extends AbstractDescribableImpl<TestSp
             XLTestServer xlTest = XLTestServerFactory.newInstance(
                     xlTestDescriptor.getServerUrl(),
                     xlTestDescriptor.getProxyUrl(),
-                    XLTestNotifier.lookupSystemCredentials(xlTestDescriptor.getCredentialsId()));
+                    XLTestView.lookupSystemCredentials(xlTestDescriptor.getCredentialsId()));
 
             Map<String, TestSpecification> ts = xlTest.getTestSpecifications();
             return getSpecificationOptions(ts);

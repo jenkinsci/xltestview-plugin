@@ -64,9 +64,9 @@ import static hudson.util.FormValidation.error;
 import static hudson.util.FormValidation.ok;
 
 // TODO: should use Recorder if we want to fail the build based upon a Qualification see ArtifactArchiver
-public class XLTestNotifier extends Notifier {
+public class XLTestView extends Notifier {
 
-    private final static Logger LOG = LoggerFactory.getLogger(XLTestNotifier.class);
+    private final static Logger LOG = LoggerFactory.getLogger(XLTestView.class);
 
     public static final SchemeRequirement HTTP_SCHEME = new SchemeRequirement("http");
     public static final SchemeRequirement HTTPS_SCHEME = new SchemeRequirement("https");
@@ -75,8 +75,8 @@ public class XLTestNotifier extends Notifier {
 
     // constructor arguments must match config.jelly fields
     @DataBoundConstructor
-    public XLTestNotifier(List<TestSpecificationDescribable> testSpecifications) {
-        LOG.debug("XLTestNotifier testSpecifications={}", testSpecifications);
+    public XLTestView(List<TestSpecificationDescribable> testSpecifications) {
+        LOG.debug("XLTestView testSpecifications={}", testSpecifications);
         // System.out.printf("constructor %s\n", testSpecifications);
         this.testSpecifications = testSpecifications;
     }
@@ -237,7 +237,7 @@ public class XLTestNotifier extends Notifier {
 
         @Override
         public String getDisplayName() {
-            return Messages.XLTestNotifier_displayName();
+            return Messages.XLTestView_displayName();
         }
 
         public FormValidation doTestConnection(@QueryParameter("serverUrl") final String serverUrl,
@@ -248,7 +248,7 @@ public class XLTestNotifier extends Notifier {
                 if (credentialsId == null || credentialsId.isEmpty()) {
                     return FormValidation.error("No credentials specified");
                 }
-                StandardUsernamePasswordCredentials credentials = XLTestNotifier.lookupSystemCredentials(credentialsId);
+                StandardUsernamePasswordCredentials credentials = XLTestView.lookupSystemCredentials(credentialsId);
                 if (credentials == null) {
                     return FormValidation.error(String.format("Could not find credential with id '%s'", credentialsId));
                 }
