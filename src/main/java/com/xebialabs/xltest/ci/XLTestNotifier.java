@@ -22,14 +22,30 @@
  */
 package com.xebialabs.xltest.ci;
 
+import java.io.IOException;
+import java.io.PrintStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.kohsuke.stapler.AncestorInPath;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.StaplerRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.common.StandardUsernameListBoxModel;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.SchemeRequirement;
 import com.google.common.base.Objects;
 import com.google.common.base.Strings;
+
 import com.xebialabs.xltest.ci.server.XLTestServer;
 import com.xebialabs.xltest.ci.server.XLTestServerFactory;
+
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -42,29 +58,14 @@ import hudson.tasks.Publisher;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import jenkins.model.Jenkins;
+import jenkins.tasks.SimpleBuildStep;
 import net.sf.json.JSONObject;
-import org.kohsuke.stapler.AncestorInPath;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.StaplerRequest;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.io.PrintStream;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import static com.cloudbees.plugins.credentials.CredentialsProvider.lookupCredentials;
 import static hudson.util.FormValidation.error;
 import static hudson.util.FormValidation.ok;
 
-// TODO: should use Recorder if we want to fail the build based upon a Qualification see ArtifactArchiver
-public class XLTestNotifier extends Notifier {
+public class XLTestNotifier extends Notifier implements SimpleBuildStep {
 
     private final static Logger LOG = LoggerFactory.getLogger(XLTestNotifier.class);
 
@@ -83,62 +84,87 @@ public class XLTestNotifier extends Notifier {
 
     @Override
     public BuildStepMonitor getRequiredMonitorService() {
-        return BuildStepMonitor.BUILD;
+        return BuildStepMonitor.NONE;
     }
 
+
+    /**
+     * Run this step.
+     *
+     * @param run       a build this is running as a part of
+     * @param workspace a workspace to use for any file operations
+     * @param launcher  a way to start processes
+     * @param listener  a place to send output
+     * @throws InterruptedException if the step is interrupted
+     * @throws IOException          if something goes wrong; use {@link AbortException} for a polite error
+     */
+
     @Override
-    public boolean perform(final AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
+    public void perform(final Run<?, ?> build, final FilePath workspace, final Launcher launcher, final TaskListener listener) throws InterruptedException, IOException {
         PrintStream logger = listener.getLogger();
-        if (!build.getResult().completeBuild) {
-            logger.printf("[XL TestView] Not sending test run data since the build was aborted\n");
-            // according to javadoc we have to do this...
-            // TODO: or throw an exception?
-            return true;
-        }
-        FilePath workspace = build.getWorkspace();
+// TODO: Disabled, due to getResult == null
+//        if (!build.getResult().completeBuild) {
+//            logger.printf("[XL TestView] Not sending test run data since the build was aborted\n");
+//            // according to javadoc we have to do this...
+//            // TODO: or throw an exception?
+//        }
 
         // TODO: metadata.put("buildEnvironment", build.getEnvironment(listener));
         // TODO: metadata.put("ciServerVersion", Jenkins.getVersion().toString());
 
+        if (getDescriptor().getServerUrl() == null) {
+            logger.printf("[XL TestView] No XL TestView server configured.\n");
+            throw new IllegalStateException("No XL TestView server configured");
+        }
         logger.printf("[XL TestView] Uploading test run data to '%s'\n", getDescriptor().getServerUrl());
 
         String rootUrl = Jenkins.getInstance().getRootUrl();
         if (rootUrl == null) {
             LOG.error("Unable to determine root URL for jenkins instance aborting post build step.");
-            logger.printf("[XL TestView] unable to determine root URL for the jenkins instance\n");
+            logger.printf("[XL TestView] unable to determine root URL for the jenkins instance. Please configure it.\n");
             throw new IllegalStateException("Unable to determine root URL for jenkins instance. Aborting XL Test post build step.");
         }
-        String jobUrl = rootUrl + build.getProject().getUrl();
+        String jobUrl = build.getParent().getUrl();
         String buildUrl = rootUrl + build.getUrl();
-        String buildResult = translateResult(build.getResult());
-        String buildNumber = Integer.toString(build.getNumber());
 
+        // TODO: Disabled, due to getResult == null
+        //String buildResult = translateResult(build.getResult());
+        String buildNumber = Integer.toString(build.getNumber());
+        // extra null check due to no checking enforced via UI.
+        if (testSpecifications == null) {
+            // TODO: better message
+            logger.print("No test specs defined or passed in.") ;
+        }
         for (TestSpecificationDescribable ts : testSpecifications) {
             Map<String, Object> metadata = new HashMap<String, Object>();
             metadata.put("source", "jenkins");
             metadata.put("serverUrl", rootUrl);
-            metadata.put("buildResult", buildResult);
+            //metadata.put("buildResult", buildResult);
             metadata.put("buildNumber", buildNumber);
-            metadata.put("jobName", build.getProject().getFullName());
+            metadata.put("jobName", build.getParent().getFullName());
             metadata.put("jobUrl", jobUrl);
             metadata.put("buildUrl", buildUrl);
-            metadata.put("executedOn", build.getBuiltOn().getNodeName());   // "" in case of master
-            metadata.put("buildParameters", build.getBuildVariables());
+
+            // TODO: figure out slave in workflow setting
+            if (build instanceof AbstractBuild) {
+                final AbstractBuild ab = (AbstractBuild) build;
+                metadata.put("executedOn", ab.getBuiltOn().getNodeName());   // "" in case of master
+                metadata.put("buildParameters", ab.getBuildVariables());
+            }
 
             try {
                 uploadTestRun(ts, metadata, workspace, logger);
             } catch (Exception e) {
-                if (build.getResult().equals(Result.FAILURE)) {
-                    logger.printf("[XL TestView] Reason: %s\n", e.getMessage());
-                } else {
-                    logger.printf("[XL TestView] XL Test changes the build status to UNSTABLE\n");
-                    logger.printf("[XL TestView] Reason: %s\n", e.getMessage());
-                    build.setResult(Result.UNSTABLE);
-                }
+// TODO: Disabled, due to getResult == null
+//                if (build.getResult().equals(Result.FAILURE)) {
+//                    logger.printf("[XL TestView] Reason: %s\n", e.getMessage());
+//                } else {
+//                    logger.printf("[XL TestView] XL Test changes the build status to UNSTABLE\n");
+//                    logger.printf("[XL TestView] Reason: %s\n", e.getMessage());
+//                    build.setResult(Result.UNSTABLE);
+//                }
             }
         }
-
-        return true;
     }
 
     private void uploadTestRun(TestSpecificationDescribable ts, Map<String, Object> metadata, FilePath workspace, PrintStream logger) throws InterruptedException, IOException {
