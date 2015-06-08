@@ -29,7 +29,7 @@ buildscript {
         }
     }
     dependencies {
-        classpath 'org.jenkins-ci.tools:gradle-jpi-plugin:0.5.0'
+        classpath 'org.jenkins-ci.tools:gradle-jpi-plugin:0.11.1'
         classpath 'org.eclipse.jgit:org.eclipse.jgit:3.6.1.201501031845-r'
     }
 }
@@ -89,35 +89,6 @@ repositories {
 
 test {
     useTestNG()
-}
-
-// if building in XebiaLabs infrastructure configure our repository
-if(project.hasProperty('nexusBaseUrl')) {
-    // return the version number
-    tasks.jpi.archiveName = "${name}-${version}.hpi"
-
-    // deploy to internal nexus
-    def uploadArchives = tasks.getByName("uploadArchives")
-    uploadArchives.doFirst {
-        repositories {
-            def nexusReleaseUrl = "${project.nexusBaseUrl}/repositories/releases"
-            if (project.version.toString().contains("-alpha-")) {
-                nexusReleaseUrl = "${project.nexusBaseUrl}/repositories/alphas"
-            }
-
-            mavenDeployer {
-                repository(url: nexusReleaseUrl) {
-                    authentication(userName: "${project.nexusUserName}", password: "${project.nexusPassword}")
-                }
-                snapshotRepository(url: "${project.nexusBaseUrl}/repositories/snapshots") {
-                    authentication(userName: "${project.nexusUserName}", password: "${project.nexusPassword}")
-                }
-                addFilter('jpi') {artifact, file ->
-                    artifact.type == 'jpi'
-                }
-            }
-        }
-    }
 }
 
 configurations {

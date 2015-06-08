@@ -68,7 +68,7 @@ class ReleasePlugin implements Plugin<Project> {
             def subBuild = project.task("${prefix}SubBuild", type: GradleBuild, dependsOn: preBuild) {
                 description = "Execute build with release versions for ${releaseTaskName}"
                 group = groupName
-                tasks = [ 'build', 'uploadArchives' ]	// TODO configurable
+                tasks = [ 'build', 'publish' ]	// TODO configurable
                 doLast { println "Sub Build for ${releaseTaskName} done." }
             }
 
