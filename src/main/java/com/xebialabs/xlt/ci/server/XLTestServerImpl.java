@@ -20,15 +20,15 @@
  * this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
-package com.xebialabs.xltest.ci.server;
+package com.xebialabs.xlt.ci.server;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.squareup.okhttp.*;
-import com.xebialabs.xltest.ci.server.authentication.UsernamePassword;
-import com.xebialabs.xltest.ci.server.domain.ImportError;
-import com.xebialabs.xltest.ci.server.domain.TestSpecification;
+import com.xebialabs.xlt.ci.server.authentication.UsernamePassword;
+import com.xebialabs.xlt.ci.server.domain.ImportError;
+import com.xebialabs.xlt.ci.server.domain.TestSpecification;
 import hudson.FilePath;
 import hudson.util.DirScanner;
 import hudson.util.io.ArchiverFactory;

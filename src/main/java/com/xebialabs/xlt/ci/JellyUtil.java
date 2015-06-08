@@ -1,4 +1,4 @@
-package com.xebialabs.xltest.ci;
+package com.xebialabs.xlt.ci;
 
 import hudson.util.ListBoxModel;
 

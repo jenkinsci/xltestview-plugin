@@ -41,7 +41,7 @@ apply plugin: com.xebialabs.gradle.plugins.release.ReleasePlugin
 apply plugin: 'eclipse'
 apply plugin: 'idea'
 
-group = "com.xebialabs.xltest.ci"
+group = "com.xebialabs.xlt.ci"
 description = "Aggregate your test results in &lt;a href='http://www.xebialabs.com'&gt;XebiaLabs XL TestView&lt;/a&gt;."
 
 // starting with jenkins 1.608 this should move to 1.7

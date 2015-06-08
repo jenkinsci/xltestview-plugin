@@ -20,10 +20,10 @@
  * this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
-package com.xebialabs.xltest.ci.server;
+package com.xebialabs.xlt.ci.server;
 
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
-import com.xebialabs.xltest.ci.server.authentication.UsernamePassword;
+import com.xebialabs.xlt.ci.server.authentication.UsernamePassword;
 
 public class XLTestServerFactory {
 

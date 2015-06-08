@@ -1,11 +1,11 @@
-package com.xebialabs.xltest.ci.server;
+package com.xebialabs.xlt.ci.server;
 
 import com.squareup.okhttp.mockwebserver.MockResponse;
 import com.squareup.okhttp.mockwebserver.MockWebServer;
 import com.squareup.okhttp.mockwebserver.RecordedRequest;
-import com.xebialabs.xltest.ci.TestSpecificationDescribable;
-import com.xebialabs.xltest.ci.server.authentication.UsernamePassword;
-import com.xebialabs.xltest.ci.server.domain.TestSpecification;
+import com.xebialabs.xlt.ci.TestSpecificationDescribable;
+import com.xebialabs.xlt.ci.server.authentication.UsernamePassword;
+import com.xebialabs.xlt.ci.server.domain.TestSpecification;
 import hudson.FilePath;
 import hudson.util.ListBoxModel;
 import org.mockito.Mockito;

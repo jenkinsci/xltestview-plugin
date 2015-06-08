@@ -20,7 +20,7 @@
  * this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
-package com.xebialabs.xltest.ci;
+package com.xebialabs.xlt.ci;
 
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.common.StandardUsernameListBoxModel;
@@ -28,8 +28,8 @@ import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredenti
 import com.cloudbees.plugins.credentials.domains.SchemeRequirement;
 import com.google.common.base.Objects;
 import com.google.common.base.Strings;
-import com.xebialabs.xltest.ci.server.XLTestServer;
-import com.xebialabs.xltest.ci.server.XLTestServerFactory;
+import com.xebialabs.xlt.ci.server.XLTestServer;
+import com.xebialabs.xlt.ci.server.XLTestServerFactory;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;

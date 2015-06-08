@@ -1,4 +1,4 @@
-package com.xebialabs.xltest.ci.server.authentication;
+package com.xebialabs.xlt.ci.server.authentication;
 
 public interface UsernamePassword {
     String getUsername();

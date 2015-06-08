@@ -1,4 +1,4 @@
-package com.xebialabs.xltest.ci.server.domain;
+package com.xebialabs.xlt.ci.server.domain;
 
 
 import com.google.common.base.Objects;

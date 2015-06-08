@@ -1,10 +1,10 @@
-package com.xebialabs.xltest.ci;
+package com.xebialabs.xlt.ci;
 
 import com.google.common.base.Objects;
 import com.google.inject.Inject;
-import com.xebialabs.xltest.ci.server.XLTestServer;
-import com.xebialabs.xltest.ci.server.XLTestServerFactory;
-import com.xebialabs.xltest.ci.server.domain.TestSpecification;
+import com.xebialabs.xlt.ci.server.XLTestServer;
+import com.xebialabs.xlt.ci.server.XLTestServerFactory;
+import com.xebialabs.xlt.ci.server.domain.TestSpecification;
 import hudson.Extension;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
