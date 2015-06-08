@@ -5,7 +5,7 @@
  * <http://www.gnu.org/licenses/old-licenses/gpl-2.0.html>, like most XebiaLabs
  * Libraries. There are special exceptions to the terms and conditions of the
  * GPLv2 as it is applied to this software, see the FLOSS License Exception
- * <https://github.com/jenkinsci/xltest-plugin/blob/master/LICENSE>.
+ * <https://github.com/jenkinsci/xltestview-plugin/blob/master/LICENSE>.
  * <p/>
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -106,7 +106,7 @@ public class XLTestNotifier extends Notifier {
         if (rootUrl == null) {
             LOG.error("Unable to determine root URL for jenkins instance aborting post build step.");
             logger.printf("[XL TestView] unable to determine root URL for the jenkins instance\n");
-            throw new IllegalStateException("Unable to determine root URL for jenkins instance. Aborting XL Test post build step.");
+            throw new IllegalStateException("Unable to determine root URL for jenkins instance. Aborting XL TestView post build step.");
         }
         String jobUrl = rootUrl + build.getProject().getUrl();
         String buildUrl = rootUrl + build.getUrl();
@@ -131,7 +131,7 @@ public class XLTestNotifier extends Notifier {
                 if (build.getResult().equals(Result.FAILURE)) {
                     logger.printf("[XL TestView] Reason: %s\n", e.getMessage());
                 } else {
-                    logger.printf("[XL TestView] XL Test changes the build status to UNSTABLE\n");
+                    logger.printf("[XL TestView] XL TestView changes the build status to UNSTABLE\n");
                     logger.printf("[XL TestView] Reason: %s\n", e.getMessage());
                     build.setResult(Result.UNSTABLE);
                 }

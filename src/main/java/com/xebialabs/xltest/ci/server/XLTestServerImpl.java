@@ -5,7 +5,7 @@
  * <http://www.gnu.org/licenses/old-licenses/gpl-2.0.html>, like most XebiaLabs
  * Libraries. There are special exceptions to the terms and conditions of the
  * GPLv2 as it is applied to this software, see the FLOSS License Exception
- * <https://github.com/jenkinsci/xltest-plugin/blob/master/LICENSE>.
+ * <https://github.com/jenkinsci/xltestview-plugin/blob/master/LICENSE>.
  * <p/>
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the

@@ -1,10 +1,10 @@
 ## Preface ##
 
-This document describes the functionality provided by **XL Test Jenkins Plugin**.
+This document describes the functionality provided by **XL TestView Jenkins Plugin**.
 
 ## Overview ##
 
-The **XL Test Jenkins Plugin** provides a post-build action that allows you to send test results to XL Test.
+The **XL TestView Jenkins Plugin** provides a post-build action that allows you to send test results to XL TestView.
 
 ### Features ###
 
@@ -16,18 +16,18 @@ The **XL Test Jenkins Plugin** provides a post-build action that allows you to s
 ### Requirements ###
 
 * **Jenkins**: Jenkins **LTS** version {{supportedLtsVersion}} or higher.
-* **XL Test**: Grab a copy from http://xebialabs.com/products/xl-test.
+* **XL TestView**: Grab a copy from http://xebialabs.com/products/xl-testview.
 
 ## Configuration ##
 
-There are 2 places to configure the **XL Release Jenkins Plugin**: global Jenkins configuration and job configuration.
+There are 2 places to configure the **XL TestView Jenkins Plugin**: global Jenkins configuration and job configuration.
 
 ### Plugin configuration ###
 
-At *Manage Jenkins* -> *Configure System* you can specify the XL Test server URL and one or more sets of credentials. Different sets can be used for different jobs.
+At *Manage Jenkins* -> *Configure System* you can specify the XL TestView server URL and one or more sets of credentials. Different sets can be used for different jobs.
 
 ### Job configuration ###
 
-In the Job Configuration page, choose *Post-build Actions* -> *Add post-build action* -> *Send test results to XL Test*. Specify the tool used to perform the testing and a file pattern -- this will save bandwidth as the results files are sent to XL Test for analysis.
+In the Job Configuration page, choose *Post-build Actions* -> *Add post-build action* -> *Send test results to XL TestView*. Specify the tool used to perform the testing and a file pattern -- this will save bandwidth as the results files are sent to XL TestView for analysis.
 
 ## Release notes ##

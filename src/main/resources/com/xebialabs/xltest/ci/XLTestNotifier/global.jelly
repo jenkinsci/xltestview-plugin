@@ -3,7 +3,7 @@
          xmlns:f="/lib/form" xmlns:c="/lib/credentials">
 
     <!-- Global configuration -->
-    <f:section title="XL Test">
+    <f:section title="XL TestView">
 
         <f:entry title="${%Server Url}" field="serverUrl">
             <f:textbox/>
