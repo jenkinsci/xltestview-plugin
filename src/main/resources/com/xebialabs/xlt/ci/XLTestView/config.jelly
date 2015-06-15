@@ -6,14 +6,11 @@
     <j:if test="${descriptor.getServerUrl() == null || descriptor.getServerUrl().isEmpty()}">
         <f:block>
             <div>
-                To upload results to XL TestView you first need to configure:
+                To upload test results to XL TestView, first configure:
                 <ul>
-                    <li>a XL TestView instance in Jenkins. This you can do
-                        <a href="${rootURL}/configure">here</a>.
+                    <li>An XL TestView instance in Jenkins. Click <a href="${rootURL}/configure">here</a> to do so (ensure that you save/apply the job configuration first).
                     </li>
-                    <li>a
-                        <i>test specification</i>
-                        inside XL TestView.
+                    <li>A test specification in XL TestView.
                     </li>
                 </ul>
             </div>
