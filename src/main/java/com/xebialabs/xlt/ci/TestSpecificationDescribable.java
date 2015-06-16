@@ -106,8 +106,8 @@ public class TestSpecificationDescribable extends AbstractDescribableImpl<TestSp
         }
 
         static private boolean isSetOfTestSpecifications(TestSpecification testSpecification) {
-            // TODO: this should be a check on the type systems
-            return "xltest.TestSpecificationSet".equals(testSpecification.getType());
+            // TODO: this should be a check on the type system
+            return "xlt.TestSpecificationSet".equals(testSpecification.getType());
         }
     }
 }
