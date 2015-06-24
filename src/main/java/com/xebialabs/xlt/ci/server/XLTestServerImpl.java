@@ -169,6 +169,8 @@ public class XLTestServerImpl implements XLTestServer {
                     .build();
 
             Response response = client.newCall(request).execute();
+            ObjectMapper mapper = createMapper();
+            ImportError importError;
             switch (response.code()) {
                 case 200:
                     logInfo(logger, "Sent data successfully");
@@ -177,8 +179,12 @@ public class XLTestServerImpl implements XLTestServer {
                     logWarn(logger, "No new results were detected. Nothing was imported.");
                     throw new IllegalStateException("No new results were detected. Nothing was imported.");
                 case 400:
-                    ObjectMapper mapper = createMapper();
-                    ImportError importError = mapper.readValue(response.body().byteStream(), ImportError.class);
+                    importError = mapper.readValue(response.body().byteStream(), ImportError.class);
+                    throw new IllegalStateExcept`ion(importError.getMessage());
+                case 422:
+                    logWarn(logger, "Unable to process results.");
+                    logWarn(logger, "Are you sure your include/exclude pattern provides all needed files for the test tool?");
+                    importError = mapper.readValue(response.body().byteStream(), ImportError.class);
                     throw new IllegalStateException(importError.getMessage());
                 case 401:
                     throw new IllegalStateException("Credentials are invalid");
@@ -190,6 +196,7 @@ public class XLTestServerImpl implements XLTestServer {
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException(e);
         } catch (IOException e) {
+            e.printStackTrace();
             throw new IOException("I/O error uploading test run data to " + serverUrl.toString(), e);
         }
     }

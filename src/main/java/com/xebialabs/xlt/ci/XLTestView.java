@@ -145,7 +145,7 @@ public class XLTestView extends Notifier {
         try {
             // TODO: title would be nicer..
             logger.printf("[XL TestView] Uploading test run for test specification with id '%s'\n", ts.getTestSpecificationId());
-            logger.printf("[XL TestView] data:\n%s\n", metadata.toString());
+            logger.printf("[XL TestView] Jenkins data:\n%s\n", metadata.toString());
 
             getXLTestServer().uploadTestRun(ts.getTestSpecificationId(), workspace, ts.getIncludes(), ts.getExcludes(), metadata, logger);
         } catch (IOException e) {
