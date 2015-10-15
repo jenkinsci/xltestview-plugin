@@ -32,6 +32,7 @@ import com.xebialabs.xlt.ci.server.domain.TestSpecification;
 import hudson.FilePath;
 import hudson.util.DirScanner;
 import hudson.util.io.ArchiverFactory;
+import jenkins.model.Jenkins;
 import okio.BufferedSink;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,6 +58,7 @@ public class XLTestServerImpl implements XLTestServer {
     public static final String API_TESTSPECIFICATIONS_EXTENDED = "/api/internal/testspecifications/extended";
     public static final String API_IMPORT = "/api/internal/import";
     public static final String APPLICATION_JSON_UTF_8 = "application/json; charset=utf-8";
+    public static final String USER_AGENT = "XL TestView Jenkins plugin";
 
     private OkHttpClient client = new OkHttpClient();
 
@@ -93,6 +95,7 @@ public class XLTestServerImpl implements XLTestServer {
 
             return new Request.Builder()
                     .url(url)
+                    .header("User-Agent", getUserAgent())
                     .header("Accept", APPLICATION_JSON_UTF_8)
                     .header("Authorization", createCredential())
                     .build();
@@ -163,6 +166,7 @@ public class XLTestServerImpl implements XLTestServer {
 
             Request request = new Request.Builder()
                     .url(createUrl(API_IMPORT + "/" + testSpecificationId, serverUrl.toString()))
+                    .header("User-Agent", getUserAgent())
                     .header("Accept", APPLICATION_JSON_UTF_8)
                     .header("Authorization", createCredential())
                     .post(body)
@@ -198,6 +202,18 @@ public class XLTestServerImpl implements XLTestServer {
         } catch (IOException e) {
             e.printStackTrace();
             throw new IOException("I/O error uploading test run data to " + serverUrl.toString(), e);
+        }
+    }
+
+    private String getUserAgent() {
+        return USER_AGENT + getPluginVersion();
+    }
+
+    protected String getPluginVersion() {
+        try {
+            return " " + Jenkins.getInstance().getPluginManager().getPlugin("xltestview-plugin").getVersion();
+        } catch (Exception e) {
+            return "";
         }
     }
 

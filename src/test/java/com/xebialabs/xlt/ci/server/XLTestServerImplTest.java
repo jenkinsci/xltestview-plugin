@@ -31,6 +31,8 @@ public class XLTestServerImplTest {
     // TODO: this is from the demo data and not 'the whole truth'
     private static final String TEST_SPEC_RESPONSE = "{\"regressionTests\":{\"id\":\"regressionTests\",\"project\":{\"id\":\"DemoProject\",\"title\":\"Demo Project\",\"type\":\"xlt.Project\"},\"qualification\":{\"description\":\"Description unavailable\",\"type\":\"xlt.DefaultFunctionalTestsQualifier\"},\"title\":\"regressionTests\",\"type\":\"xlt.ShowCaseTestSpecification\"},\"demoGatling\":{\"id\":\"demoGatling\",\"project\":{\"id\":\"DemoProject\",\"title\":\"Demo Project\",\"type\":\"xlt.Project\"},\"qualification\":{\"description\":\"Description unavailable\",\"type\":\"xlt.DefaultPerformanceTestsQualifier\"},\"title\":\"demoGatling\",\"type\":\"xlt.ShowCaseTestSpecification\"},\"functionalTestsComponentA\":{\"id\":\"functionalTestsComponentA\",\"project\":{\"id\":\"DemoProject\",\"title\":\"Demo Project\",\"type\":\"xlt.Project\"},\"qualification\":{\"description\":\"Description unavailable\",\"type\":\"xlt.DefaultFunctionalTestsQualifier\"},\"title\":\"functionalTestsComponentA\",\"type\":\"xlt.ShowCaseTestSpecification\"},\"f3850327-69df-4f01-b063-e5d367a960f8\":{\"id\":\"f3850327-69df-4f01-b063-e5d367a960f8\",\"project\":{\"id\":\"DemoProject\",\"title\":\"Demo Project\",\"type\":\"xlt.Project\"},\"title\":\"allMyTests\",\"type\":\"xlt.TestSpecificationSet\"},\"calculatorTestsComponentB\":{\"id\":\"calculatorTestsComponentB\",\"project\":{\"id\":\"DemoProject\",\"title\":\"Demo Project\",\"type\":\"xlt.Project\"},\"qualification\":{\"description\":\"Description unavailable\",\"type\":\"xlt.DefaultFunctionalTestsQualifier\"},\"title\":\"calculatorTestsComponentB\",\"type\":\"xlt.ShowCaseTestSpecification\"},\"performance tests (old) for Demo\":{\"id\":\"performance tests (old) for Demo\",\"project\":{\"id\":\"DemoProject\",\"title\":\"Demo Project\",\"type\":\"xlt.Project\"},\"title\":\"performance tests (old) for Demo\",\"type\":\"xlt.ShowCaseTestSpecification\"}}";
 
+    public static final String PLUGIN_VERSION = " 1.2.3-SNAPSHOT";
+
     MockWebServer xltStub;
     XLTestServerImpl xlTestServer;
 
@@ -43,7 +45,12 @@ public class XLTestServerImplTest {
         when(cred.getUsername()).thenReturn("admin");
         when(cred.getPassword()).thenReturn("admin");
 
-        xlTestServer = new XLTestServerImpl(String.format("http://127.0.0.1:%d", xltStub.getPort()), null, cred);
+        xlTestServer = new XLTestServerImpl(String.format("http://127.0.0.1:%d", xltStub.getPort()), null, cred) {
+            @Override
+            protected String getPluginVersion() {
+                return PLUGIN_VERSION;
+            }
+        };
     }
 
     @AfterMethod(alwaysRun = true)
@@ -63,6 +70,7 @@ public class XLTestServerImplTest {
         assertEquals(request.getRequestLine(), "GET /api/internal/data HTTP/1.1");
         assertEquals(request.getHeader("accept"), "application/json; charset=utf-8");
         assertEquals(request.getHeader("authorization"), "Basic YWRtaW46YWRtaW4=");
+        assertEquals(request.getHeader("User-Agent"), "XL TestView Jenkins plugin 1.2.3-SNAPSHOT");
         assertEquals(request.getBody().readUtf8(), "");
     }
 
