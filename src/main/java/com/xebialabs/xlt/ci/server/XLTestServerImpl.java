@@ -22,27 +22,28 @@
  */
 package com.xebialabs.xlt.ci.server;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.squareup.okhttp.*;
-import com.xebialabs.xlt.ci.server.authentication.UsernamePassword;
-import com.xebialabs.xlt.ci.server.domain.ImportError;
-import com.xebialabs.xlt.ci.server.domain.TestSpecification;
-import hudson.FilePath;
-import hudson.util.DirScanner;
-import hudson.util.io.ArchiverFactory;
-import jenkins.model.Jenkins;
-import okio.BufferedSink;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.*;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.squareup.okhttp.*;
+
+import com.xebialabs.xlt.ci.server.authentication.UsernamePassword;
+import com.xebialabs.xlt.ci.server.domain.ImportError;
+import com.xebialabs.xlt.ci.server.domain.TestSpecification;
+
+import hudson.FilePath;
+import hudson.util.DirScanner;
+import hudson.util.io.ArchiverFactory;
+import jenkins.model.Jenkins;
+import okio.BufferedSink;
 
 import static java.lang.String.format;
 import static org.apache.commons.io.IOUtils.closeQuietly;
@@ -63,12 +64,16 @@ public class XLTestServerImpl implements XLTestServer {
     private OkHttpClient client = new OkHttpClient();
 
     private URI proxyUrl;
-    private URI serverUrl;
+    private URL serverUrl;
 
     private UsernamePassword credentials;
 
     XLTestServerImpl(String serverUrl, String proxyUrl, UsernamePassword credentials) {
-        this.serverUrl = URI.create(serverUrl);
+        try {
+            this.serverUrl = new URL(serverUrl);
+        } catch (MalformedURLException e) {
+            throw new IllegalArgumentException(e);
+        }
         if (credentials == null) {
             throw new IllegalArgumentException("Need credentials to connect to " + serverUrl);
         }
@@ -89,9 +94,9 @@ public class XLTestServerImpl implements XLTestServer {
         }
     }
 
-    private Request createRequestFor(String relativeUrl, String serverUrl) {
+    private Request createRequestFor(String relativeUrl) {
         try {
-            URL url = createUrl(relativeUrl, serverUrl);
+            URL url = createUrl(relativeUrl);
 
             return new Request.Builder()
                     .url(url)
@@ -107,8 +112,8 @@ public class XLTestServerImpl implements XLTestServer {
         }
     }
 
-    private URL createUrl(String relativeUrl, String serverUrl) throws MalformedURLException, URISyntaxException {
-        return new URI(serverUrl + relativeUrl).toURL();
+    private URL createUrl(String relativeUrl) throws MalformedURLException, URISyntaxException {
+        return new URL(serverUrl, relativeUrl);
     }
 
     private String createCredential() {
@@ -123,7 +128,7 @@ public class XLTestServerImpl implements XLTestServer {
             if (serverUrl.length() > 1 && serverUrl.endsWith("/")) {
                 serverUrl = serverUrl.substring(0, serverUrl.length() - 1);
             }
-            Request request = createRequestFor(API_CONNECTION_CHECK, serverUrl);
+            Request request = createRequestFor(API_CONNECTION_CHECK);
 
             Response response = client.newCall(request).execute();
             switch (response.code()) {
@@ -147,7 +152,8 @@ public class XLTestServerImpl implements XLTestServer {
     }
 
     @Override
-    public void uploadTestRun(String testSpecificationId, FilePath workspace, String includes, String excludes, Map<String, Object> metadata, PrintStream logger) throws IOException, InterruptedException {
+    public void uploadTestRun(String testSpecificationId, FilePath workspace, String includes, String excludes, Map<String, Object> metadata, PrintStream
+            logger) throws IOException, InterruptedException {
         if (testSpecificationId == null || testSpecificationId.isEmpty()) {
             throw new IllegalArgumentException("No test specification id specified. Does the test specification still exist in XL TestView?");
         }
@@ -165,7 +171,7 @@ public class XLTestServerImpl implements XLTestServer {
                     .build();
 
             Request request = new Request.Builder()
-                    .url(createUrl(API_IMPORT + "/" + testSpecificationId, serverUrl.toString()))
+                    .url(createUrl(API_IMPORT + "/" + testSpecificationId))
                     .header("User-Agent", getUserAgent())
                     .header("Accept", APPLICATION_JSON_UTF_8)
                     .header("Authorization", createCredential())
@@ -228,7 +234,7 @@ public class XLTestServerImpl implements XLTestServer {
     @Override
     public Map<String, TestSpecification> getTestSpecifications() {
         try {
-            Request request = createRequestFor(API_TESTSPECIFICATIONS_EXTENDED, serverUrl.toString());
+            Request request = createRequestFor(API_TESTSPECIFICATIONS_EXTENDED);
             Response response = client.newCall(request).execute();
 
             ObjectMapper mapper = createMapper();
