@@ -180,7 +180,7 @@ public class XLTestServerImpl implements XLTestServer {
                     throw new IllegalStateException("No new results were detected. Nothing was imported.");
                 case 400:
                     importError = mapper.readValue(response.body().byteStream(), ImportError.class);
-                    throw new IllegalStateExcept`ion(importError.getMessage());
+                    throw new IllegalStateException(importError.getMessage());
                 case 422:
                     logWarn(logger, "Unable to process results.");
                     logWarn(logger, "Are you sure your include/exclude pattern provides all needed files for the test tool?");
