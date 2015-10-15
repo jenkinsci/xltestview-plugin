@@ -23,6 +23,10 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.IsNull.nullValue;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -101,7 +105,7 @@ public class XLTestServerImplTest {
         xltStub.enqueue(new MockResponse()
                 .addHeader("Content-Type", "application/json; charset=utf-8")
                 .setBody("{ \"testRunId\": \"testrunid\" }"));
-        FilePath fp = new FilePath(new File("."));
+        FilePath fp = new FilePath(new File(this.getClass().getResource("/demo_test_results").getPath()));
 
         PrintStream logger = new PrintStream(System.out);
 
@@ -122,6 +126,11 @@ public class XLTestServerImplTest {
         assertEquals(request.getRequestLine(), "POST /api/internal/import/testspecid HTTP/1.1");
         assertEquals(request.getHeader("accept"), "application/json; charset=utf-8");
         assertEquals(request.getHeader("authorization"), "Basic YWRtaW46YWRtaW4=");
+        assertThat(request.getHeader("Content-Length"), is(nullValue()));
+        assertThat(request.getChunkSizes().get(0), is(2048));
+        assertThat(request.getChunkSizes().size(), is(23));
+        assertThat(request.getChunkSizes().get(22), is(1036));
+
         assertTrue(request.getBodySize() > 0);
 
         ByteArrayDataSource bads = new ByteArrayDataSource(request.getBody().inputStream(), "multipart/mixed");

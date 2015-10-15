@@ -104,7 +104,7 @@ configurations {
 
 ext {
     jacksonVersion = '2.5.3'
-    okHttpVersion = '2.3.0'
+    okHttpVersion = '2.5.0'
     slf4jVersion = '1.7.12'
     logbackVersion = '1.1.3'
 }
