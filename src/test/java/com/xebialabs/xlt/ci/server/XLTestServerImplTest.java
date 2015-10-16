@@ -10,10 +10,14 @@ import javax.mail.BodyPart;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMultipart;
 import javax.mail.util.ByteArrayDataSource;
+
+import org.apache.commons.httpclient.HttpStatus;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 import com.squareup.okhttp.mockwebserver.MockResponse;
 import com.squareup.okhttp.mockwebserver.MockWebServer;
 import com.squareup.okhttp.mockwebserver.RecordedRequest;
@@ -55,7 +59,10 @@ public class XLTestServerImplTest {
 
     UsernamePassword cred = Mockito.mock(UsernamePassword.class);
 
-    @BeforeMethod
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
+
+    @Before
     public void setup() throws IOException {
         xltestviewMock = new MockWebServer();
         xltestviewMock.start();
@@ -67,7 +74,7 @@ public class XLTestServerImplTest {
         xlTestServer = new XLTestServerImpl(String.format("http://127.0.0.1:%d", xltestviewMock.getPort()), null, cred);
     }
 
-    @AfterMethod(alwaysRun = true)
+    @After
     public void teardown() throws IOException {
         xltestviewMock.shutdown();
     }
@@ -153,8 +160,52 @@ public class XLTestServerImplTest {
 
         RecordedRequest request = xltestviewMock.takeRequest();
         verifyUploadRequest(request);
+    }
+
+    @Test
+    public void shouldCheckConnectionWithTrailingSlash() throws IOException, InterruptedException, MessagingException {
+        String TRAILING_SLASH = "/";
+
+        XLTestServerImpl slashedXlTestServer = new XLTestServerImpl(String.format("http://127.0.0.1:%d" + TRAILING_SLASH, xltestviewMock.getPort()), null, cred);
+
+        xltestviewMock.enqueue(new MockResponse()
+                .addHeader("Content-Type", "application/json; charset=utf-8")
+                .setBody("{}"));
+
+        slashedXlTestServer.checkConnection();
+
+        RecordedRequest request = xltestviewMock.takeRequest();
+        assertEquals(request.getRequestLine(), "GET /api/internal/data HTTP/1.1");
+        assertEquals(request.getHeader("accept"), "application/json; charset=utf-8");
+        assertEquals(request.getHeader("authorization"), "Basic YWRtaW46YWRtaW4=");
+        assertEquals(request.getBody().readUtf8(), "");
+    }
 
 
+    @Test
+    public void shouldFailCheckConnectionWithNotFound() throws IOException, InterruptedException, MessagingException {
+        thrown.expect(IllegalStateException.class);
+        thrown.expectMessage("URL is invalid or server is not running");
+
+        xltestviewMock.enqueue(new MockResponse()
+                .setResponseCode(HttpStatus.SC_NOT_FOUND));
+
+        xlTestServer.checkConnection();
+
+        xltestviewMock.takeRequest();
+    }
+
+    @Test
+    public void shouldFailCheckConnectionWithBadCredentials() throws IOException, InterruptedException, MessagingException {
+        thrown.expect(IllegalStateException.class);
+        thrown.expectMessage("Credentials are invalid");
+
+        xltestviewMock.enqueue(new MockResponse()
+                .setResponseCode(HttpStatus.SC_UNAUTHORIZED));
+
+        xlTestServer.checkConnection();
+
+        xltestviewMock.takeRequest();
     }
 
     private void verifyUploadRequest(final RecordedRequest request) throws IOException, MessagingException {
