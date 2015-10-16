@@ -165,6 +165,7 @@ public class XLTestServerImpl implements XLTestServer {
                     .url(createUrl(API_IMPORT + "/" + testSpecificationId, serverUrl.toString()))
                     .header("Accept", APPLICATION_JSON_UTF_8)
                     .header("Authorization", createCredential())
+                    .header("Transfer-Encoding", "chunked")
                     .post(body)
                     .build();
 
