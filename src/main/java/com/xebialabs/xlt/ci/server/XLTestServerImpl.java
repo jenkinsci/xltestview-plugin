@@ -121,10 +121,7 @@ public class XLTestServerImpl implements XLTestServer {
     public void checkConnection() {
         try {
             LOG.info("Checking connection to {}", serverUrl);
-            String serverUrl = this.serverUrl.toString();
-            if (serverUrl.length() > 1 && serverUrl.endsWith("/")) {
-                serverUrl = serverUrl.substring(0, serverUrl.length() - 1);
-            }
+
             Request request = createRequestFor(API_CONNECTION_CHECK);
 
             Response response = client.newCall(request).execute();
