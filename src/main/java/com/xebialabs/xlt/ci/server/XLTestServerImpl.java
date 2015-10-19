@@ -52,7 +52,7 @@ import static org.apache.commons.io.IOUtils.closeQuietly;
 public class XLTestServerImpl implements XLTestServer {
     private static final Logger LOG = LoggerFactory.getLogger(XLTestServerImpl.class);
 
-    public static final String XL_TEST_LOG_FORMAT = "[XL TestView] [%s] %s\n";
+    public static final String XL_TEST_LOG_FORMAT = "[XL TestView] [%s] %s%n";
     public static final TypeReference<Map<String, TestSpecification>> MAP_OF_TESTSPECIFICATION = new TypeReference<Map<String, TestSpecification>>() {
     };
 
@@ -125,10 +125,6 @@ public class XLTestServerImpl implements XLTestServer {
     public void checkConnection() {
         try {
             LOG.info("Checking connection to {}", serverUrl);
-            String serverUrl = this.serverUrl.toString();
-            if (serverUrl.length() > 1 && serverUrl.endsWith("/")) {
-                serverUrl = serverUrl.substring(0, serverUrl.length() - 1);
-            }
             Request request = createRequestFor(API_CONNECTION_CHECK);
 
             Response response = client.newCall(request).execute();

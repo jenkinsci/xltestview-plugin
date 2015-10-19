@@ -89,8 +89,9 @@ public class XLTestView extends Notifier {
     @Override
     public boolean perform(final AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
         PrintStream logger = listener.getLogger();
-        if (!build.getResult().completeBuild) {
-            logger.printf("[XL TestView] Not sending test run data since the build was aborted\n");
+        final Result result = build.getResult();
+        if (result == null || !result.completeBuild) {
+            logger.printf("[XL TestView] Not sending test run data since the build was aborted%n");
             // according to javadoc we have to do this...
             // TODO: or throw an exception?
             return true;
@@ -100,17 +101,17 @@ public class XLTestView extends Notifier {
         // TODO: metadata.put("buildEnvironment", build.getEnvironment(listener));
         // TODO: metadata.put("ciServerVersion", Jenkins.getVersion().toString());
 
-        logger.printf("[XL TestView] Uploading test run data to '%s'\n", getDescriptor().getServerUrl());
+        logger.printf("[XL TestView] Uploading test run data to '%s'%n", getDescriptor().getServerUrl());
 
-        String rootUrl = Jenkins.getInstance().getRootUrl();
+        String rootUrl = getRootUrl();
         if (rootUrl == null) {
             LOG.error("Unable to determine root URL for jenkins instance aborting post build step.");
-            logger.printf("[XL TestView] unable to determine root URL for the jenkins instance\n");
+            logger.printf("[XL TestView] unable to determine root URL for the jenkins instance%n");
             throw new IllegalStateException("Unable to determine root URL for jenkins instance. Aborting XL TestView post build step.");
         }
         String jobUrl = rootUrl + build.getProject().getUrl();
         String buildUrl = rootUrl + build.getUrl();
-        String buildResult = translateResult(build.getResult());
+        String buildResult = translateResult(result);
         String buildNumber = Integer.toString(build.getNumber());
 
         for (TestSpecificationDescribable ts : testSpecifications) {
@@ -122,17 +123,17 @@ public class XLTestView extends Notifier {
             metadata.put("jobName", build.getProject().getFullName());
             metadata.put("jobUrl", jobUrl);
             metadata.put("buildUrl", buildUrl);
-            metadata.put("executedOn", build.getBuiltOn().getNodeName());   // "" in case of master
+            metadata.put("executedOn", getBuildSlaveBuild(build));   // "" in case of master
             metadata.put("buildParameters", build.getBuildVariables());
 
             try {
                 uploadTestRun(ts, metadata, workspace, logger);
             } catch (Exception e) {
-                if (build.getResult().equals(Result.FAILURE)) {
-                    logger.printf("[XL TestView] Reason: %s\n", e.getMessage());
+                if (result.equals(Result.FAILURE)) {
+                    logger.printf("[XL TestView] Reason: %s%n", e.getMessage());
                 } else {
-                    logger.printf("[XL TestView] XL TestView changes the build status to UNSTABLE\n");
-                    logger.printf("[XL TestView] Reason: %s\n", e.getMessage());
+                    logger.printf("[XL TestView] XL TestView changes the build status to UNSTABLE%n");
+                    logger.printf("[XL TestView] Reason: %s%n", e.getMessage());
                     build.setResult(Result.UNSTABLE);
                 }
             }
@@ -141,20 +142,36 @@ public class XLTestView extends Notifier {
         return true;
     }
 
+    private String getRootUrl() {
+        final Jenkins instance = Jenkins.getInstance();
+        if (instance == null) {
+            throw new IllegalStateException("Jenkins is not running");
+        }
+        return instance.getRootUrl();
+    }
+
+    private String getBuildSlaveBuild(final AbstractBuild<?, ?> build) {
+        final Node builtOn = build.getBuiltOn();
+        if (builtOn == null) {
+            return "UNKNOWN";
+        }
+        return builtOn.getNodeName();
+    }
+
     private void uploadTestRun(TestSpecificationDescribable ts, Map<String, Object> metadata, FilePath workspace, PrintStream logger) throws InterruptedException, IOException {
         try {
             // TODO: title would be nicer..
-            logger.printf("[XL TestView] Uploading test run for test specification with id '%s'\n", ts.getTestSpecificationId());
-            logger.printf("[XL TestView] Jenkins data:\n%s\n", metadata.toString());
+            logger.printf("[XL TestView] Uploading test run for test specification with id '%s'%n", ts.getTestSpecificationId());
+            logger.printf("[XL TestView] Jenkins data:%n%s%n", metadata.toString());
 
             getXLTestServer().uploadTestRun(ts.getTestSpecificationId(), workspace, ts.getIncludes(), ts.getExcludes(), metadata, logger);
         } catch (IOException e) {
             // this probably means the build was aborted in some way...
-            logger.printf("[XL TestView] Error uploading: %s\n", e.getMessage());
+            logger.printf("[XL TestView] Error uploading: %s%n", e.getMessage());
             throw e;
         } catch (InterruptedException e) {
             // this probably means the build was aborted in some way...
-            logger.printf("[XL TestView] Upload interrupted: %s\n", e.getMessage());
+            logger.printf("[XL TestView] Upload interrupted: %s%n", e.getMessage());
             throw e;
         }
     }
