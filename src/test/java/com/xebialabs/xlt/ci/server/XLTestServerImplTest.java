@@ -2,6 +2,7 @@ package com.xebialabs.xlt.ci.server;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -10,8 +11,11 @@ import javax.mail.BodyPart;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMultipart;
 import javax.mail.util.ByteArrayDataSource;
+import org.apache.commons.io.output.NullOutputStream;
 import org.apache.http.HttpStatus;
 import org.mockito.Mockito;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -35,6 +39,7 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
 public class XLTestServerImplTest {
+
     // TODO: this is from the demo data and not 'the whole truth'
     private static final String TEST_SPEC_RESPONSE = "{\"regressionTests\":{\"id\":\"regressionTests\",\"project\":{\"id\":\"DemoProject\",\"title\":\"Demo " +
             "Project\",\"type\":\"xlt.Project\"},\"qualification\":{\"description\":\"Description unavailable\",\"type\":\"xlt" +
@@ -58,6 +63,7 @@ public class XLTestServerImplTest {
     private MockWebServer xltestviewMock;
 
     private final UsernamePassword cred = Mockito.mock(UsernamePassword.class);
+    private final Log4jStream log4jStream = new Log4jStream(null, "XLTestServerImpl");
 
     @BeforeMethod
     public void setup() throws IOException {
@@ -133,11 +139,10 @@ public class XLTestServerImplTest {
                 .setBody("{ \"testRunId\": \"testrunid\" }"));
         FilePath fp = new FilePath(new File(this.getClass().getResource("/demo_test_results").getPath()));
 
-        PrintStream logger = new PrintStream(System.out);
 
         Map<String, Object> metadata = createMetadata();
 
-        xlTestServer.uploadTestRun("testspecid", fp, "**/*.xml", null, metadata, logger);
+        xlTestServer.uploadTestRun("testspecid", fp, "**/*.xml", null, metadata, log4jStream);
 
         RecordedRequest request = xltestviewMock.takeRequest();
         verifyUploadRequest(request);
@@ -148,11 +153,9 @@ public class XLTestServerImplTest {
         xltestviewMock.enqueue(new MockResponse().setResponseCode(401));
         FilePath fp = new FilePath(new File(this.getClass().getResource("/demo_test_results").getPath()));
 
-        PrintStream logger = new PrintStream(System.out);
-
         Map<String, Object> metadata = createMetadata();
 
-        xlTestServer.uploadTestRun("testspecid", fp, "**/*.xml", null, metadata, logger);
+        xlTestServer.uploadTestRun("testspecid", fp, "**/*.xml", null, metadata, log4jStream);
     }
 
     @Test(expectedExceptions = PaymentRequiredException.class, expectedExceptionsMessageRegExp = "The XL TestView server does not have a valid license")
@@ -160,11 +163,9 @@ public class XLTestServerImplTest {
         xltestviewMock.enqueue(new MockResponse().setResponseCode(402));
         FilePath fp = new FilePath(new File(this.getClass().getResource("/demo_test_results").getPath()));
 
-        PrintStream logger = new PrintStream(System.out);
-
         Map<String, Object> metadata = createMetadata();
 
-        xlTestServer.uploadTestRun("testspecid", fp, "**/*.xml", null, metadata, logger);
+        xlTestServer.uploadTestRun("testspecid", fp, "**/*.xml", null, metadata, log4jStream);
     }
 
     @Test(expectedExceptions = ConnectionException.class, expectedExceptionsMessageRegExp = "Cannot find test specification 'testspecid. Please check if the XL TestView server is running and the test specification exists.")
@@ -172,11 +173,10 @@ public class XLTestServerImplTest {
         xltestviewMock.enqueue(new MockResponse().setResponseCode(404));
         FilePath fp = new FilePath(new File(this.getClass().getResource("/demo_test_results").getPath()));
 
-        PrintStream logger = new PrintStream(System.out);
 
         Map<String, Object> metadata = createMetadata();
 
-        xlTestServer.uploadTestRun("testspecid", fp, "**/*.xml", null, metadata, logger);
+        xlTestServer.uploadTestRun("testspecid", fp, "**/*.xml", null, metadata, log4jStream);
     }
 
     @Test
@@ -190,11 +190,9 @@ public class XLTestServerImplTest {
                 .setBody("{ \"testRunId\": \"testrunid\" }"));
         FilePath fp = new FilePath(new File(this.getClass().getResource("/demo_test_results").getPath()));
 
-        PrintStream logger = new PrintStream(System.out);
-
         Map<String, Object> metadata = createMetadata();
 
-        slashedXlTestServer.uploadTestRun("testspecid", fp, "**/*.xml", null, metadata, logger);
+        slashedXlTestServer.uploadTestRun("testspecid", fp, "**/*.xml", null, metadata, log4jStream);
 
         RecordedRequest request = xltestviewMock.takeRequest();
         verifyUploadRequest(request);
@@ -246,6 +244,7 @@ public class XLTestServerImplTest {
         xlTestServer.checkConnection();
     }
 
+
     private void verifyUploadRequest(final RecordedRequest request) throws IOException, MessagingException {
         assertEquals(request.getRequestLine(), "POST /api/internal/import/testspecid HTTP/1.1");
         assertEquals(request.getHeader("accept"), "application/json; charset=utf-8");
@@ -285,5 +284,22 @@ public class XLTestServerImplTest {
         metadata.put("executedOn", "slave1");
         metadata.put("buildParameters", new HashMap());
         return metadata;
+    }
+
+    private static final class Log4jStream extends PrintStream {
+        private final Logger LOG;
+
+        public Log4jStream(final OutputStream out, String logName) {
+            super(new NullOutputStream());
+            LOG = LoggerFactory.getLogger(logName);
+
+        }
+
+        @Override
+        public PrintStream printf(final String format, final Object... args) {
+            LOG.debug(String.format(format, args));
+
+            return null;
+        }
     }
 }

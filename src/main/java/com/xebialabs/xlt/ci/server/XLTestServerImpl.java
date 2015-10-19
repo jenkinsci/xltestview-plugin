@@ -253,19 +253,11 @@ public class XLTestServerImpl implements XLTestServer {
     }
 
     private void logInfo(PrintStream logger, String message) {
-        LOG.info(message);
         logger.printf(XL_TEST_LOG_FORMAT, "INFO", message);
     }
 
     private void logWarn(PrintStream logger, String message) {
-        LOG.warn(message);
         logger.printf(XL_TEST_LOG_FORMAT, "WARN", message);
-    }
-
-    private void log(PrintStream logger, String level, String message, Exception e) {
-        if (e != null) {
-            LOG.error("Exception ", e);
-        }
     }
 
     private class CloseIgnoringOutputStream extends OutputStream {
