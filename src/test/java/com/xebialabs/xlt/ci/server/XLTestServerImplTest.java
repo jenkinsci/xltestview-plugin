@@ -52,10 +52,10 @@ public class XLTestServerImplTest {
 
     public static final String PLUGIN_VERSION = " 1.2.3-SNAPSHOT";
 
-    XLTestServerImpl xlTestServer;
-    MockWebServer xltestviewMock;
+    private XLTestServerImpl xlTestServer;
+    private MockWebServer xltestviewMock;
 
-    UsernamePassword cred = Mockito.mock(UsernamePassword.class);
+    private final UsernamePassword cred = Mockito.mock(UsernamePassword.class);
 
     @BeforeMethod
     public void setup() throws IOException {
@@ -71,8 +71,6 @@ public class XLTestServerImplTest {
                 return PLUGIN_VERSION;
             }
         };
-
-        xlTestServer = new XLTestServerImpl(String.format("http://127.0.0.1:%d", xltestviewMock.getPort()), null, cred);
     }
 
     @AfterMethod(alwaysRun = true)
@@ -164,6 +162,25 @@ public class XLTestServerImplTest {
         verifyUploadRequest(request);
 
 
+    }
+
+    @Test
+    public void shouldCheckConnectionWithTrailingSlash() throws IOException, InterruptedException, MessagingException {
+        String TRAILING_SLASH = "/";
+
+        XLTestServerImpl slashedXlTestServer = new XLTestServerImpl(String.format("http://127.0.0.1:%d" + TRAILING_SLASH, xltestviewMock.getPort()), null, cred);
+
+        xltestviewMock.enqueue(new MockResponse()
+                .addHeader("Content-Type", "application/json; charset=utf-8")
+                .setBody("{}"));
+
+        slashedXlTestServer.checkConnection();
+
+        RecordedRequest request = xltestviewMock.takeRequest();
+        assertEquals(request.getRequestLine(), "GET /api/internal/data HTTP/1.1");
+        assertEquals(request.getHeader("accept"), "application/json; charset=utf-8");
+        assertEquals(request.getHeader("authorization"), "Basic YWRtaW46YWRtaW4=");
+        assertEquals(request.getBody().readUtf8(), "");
     }
 
     private void verifyUploadRequest(final RecordedRequest request) throws IOException, MessagingException {
