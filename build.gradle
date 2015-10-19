@@ -71,6 +71,11 @@ jenkinsPlugin {
     url = 'https://wiki.jenkins-ci.org/display/JENKINS/XL+TestView+Plugin'
     gitHubUrl = 'https://github.com/jenkinsci/xltestview-plugin'
 
+    // put the localizer output outside buildDir so the idea plugin does not
+    // create a non working configuration. The ignore of the buildDir seems
+    // to prevail over the configuration of the sourceDir.
+    localizerOutputDir = "${project.projectDir}/src/generated-localizer"
+
     developers {
         developer {
             id 'XebiaLabsCI'
