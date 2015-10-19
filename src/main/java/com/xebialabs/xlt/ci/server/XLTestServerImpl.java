@@ -136,6 +136,8 @@ public class XLTestServerImpl implements XLTestServer {
                     return;
                 case 401:
                     throw new IllegalStateException("Credentials are invalid");
+                case 402:
+                    throw new PaymentRequiredException("The XL TestView server does not have a valid license");
                 case 404:
                     throw new IllegalStateException("URL is invalid or server is not running");
                 default:
@@ -192,6 +194,8 @@ public class XLTestServerImpl implements XLTestServer {
                 case 400:
                     importError = mapper.readValue(response.body().byteStream(), ImportError.class);
                     throw new IllegalStateException(importError.getMessage());
+                case 402:
+                    throw new PaymentRequiredException("The XL TestView server does not have a valid license");
                 case 422:
                     logWarn(logger, "Unable to process results.");
                     logWarn(logger, "Are you sure your include/exclude pattern provides all needed files for the test tool?");

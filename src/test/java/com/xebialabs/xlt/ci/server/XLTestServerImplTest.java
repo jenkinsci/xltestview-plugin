@@ -10,6 +10,7 @@ import javax.mail.BodyPart;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMultipart;
 import javax.mail.util.ByteArrayDataSource;
+import org.apache.http.HttpStatus;
 import org.mockito.Mockito;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -141,6 +142,19 @@ public class XLTestServerImplTest {
         verifyUploadRequest(request);
     }
 
+
+    @Test(expectedExceptions = PaymentRequiredException.class, expectedExceptionsMessageRegExp = "The XL TestView server does not have a valid license")
+    public void shouldHandleLicenseErrorDuringImport() throws Exception {
+        xltestviewMock.enqueue(new MockResponse().setResponseCode(402));
+        FilePath fp = new FilePath(new File(this.getClass().getResource("/demo_test_results").getPath()));
+
+        PrintStream logger = new PrintStream(System.out);
+
+        Map<String, Object> metadata = createMetadata();
+
+        xlTestServer.uploadTestRun("testspecid", fp, "**/*.xml", null, metadata, logger);
+    }
+
     @Test
     public void shouldImportWithTrailingSlash() throws IOException, InterruptedException, MessagingException {
         String TRAILING_SLASH = "/";
@@ -181,6 +195,14 @@ public class XLTestServerImplTest {
         assertEquals(request.getHeader("accept"), "application/json; charset=utf-8");
         assertEquals(request.getHeader("authorization"), "Basic YWRtaW46YWRtaW4=");
         assertEquals(request.getBody().readUtf8(), "");
+    }
+
+    @Test(expectedExceptions = PaymentRequiredException.class, expectedExceptionsMessageRegExp = "The XL TestView server does not have a valid license")
+    public void shouldFailCheckConnectionWithInvalidLicense() throws IOException, InterruptedException, MessagingException {
+        xltestviewMock.enqueue(new MockResponse()
+                .setResponseCode(HttpStatus.SC_PAYMENT_REQUIRED));
+
+        xlTestServer.checkConnection();
     }
 
     private void verifyUploadRequest(final RecordedRequest request) throws IOException, MessagingException {
