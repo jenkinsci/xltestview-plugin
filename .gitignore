@@ -12,3 +12,4 @@ work
 .gradle
 /bin
 .idea
+/src/generated-localizer
