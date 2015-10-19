@@ -44,9 +44,8 @@ apply plugin: 'idea'
 group = "com.xebialabs.xlt.ci"
 description = "Aggregate your test results in &lt;a href='http://www.xebialabs.com'&gt;XebiaLabs XL TestView&lt;/a&gt;."
 
-// starting with jenkins 1.608 this should move to 1.7
-sourceCompatibility = '1.6'
-targetCompatibility = '1.6'
+sourceCompatibility = '1.7'
+targetCompatibility = '1.7'
 
 com.xebialabs.gradle.plugins.release.util.VersionUtil.setVersion(project)
 
@@ -66,7 +65,7 @@ task deleteGeneratedSrcLocalizer(type:Delete) {
 localizer.dependsOn deleteGeneratedSrcLocalizer
 
 jenkinsPlugin {
-    coreVersion = '1.580.3' // we need to support LTS versions
+    coreVersion = '1.609.1' // we need to support LTS versions
     displayName = "XL TestView Plugin"
     url = 'https://wiki.jenkins-ci.org/display/JENKINS/XL+TestView+Plugin'
     gitHubUrl = 'https://github.com/jenkinsci/xltestview-plugin'
