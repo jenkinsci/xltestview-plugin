@@ -237,7 +237,9 @@ public class XLTestView extends Notifier {
 
         @Override
         public String getDisplayName() {
-            return Messages.XLTestView_displayName();
+            return "Send test results to XL TestView";
+            // TODO: Build breaks when running plugin locally. Made it a constant because it is only a single string
+//            return Messages.XLTestView_displayName();
         }
 
         public FormValidation doTestConnection(@QueryParameter("serverUrl") final String serverUrl,
