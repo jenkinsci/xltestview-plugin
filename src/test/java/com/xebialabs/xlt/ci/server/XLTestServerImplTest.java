@@ -20,6 +20,7 @@ import com.squareup.okhttp.mockwebserver.MockWebServer;
 import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
 import com.xebialabs.xlt.ci.TestSpecificationDescribable;
+import com.xebialabs.xlt.ci.server.authentication.AuthenticationException;
 import com.xebialabs.xlt.ci.server.authentication.UsernamePassword;
 import com.xebialabs.xlt.ci.server.domain.TestSpecification;
 
@@ -142,10 +143,33 @@ public class XLTestServerImplTest {
         verifyUploadRequest(request);
     }
 
+    @Test(expectedExceptions = AuthenticationException.class, expectedExceptionsMessageRegExp = "User 'admin' and the supplied password are unable to log in")
+    public void shouldHandleAuthenticationErrorDuringImport() throws Exception {
+        xltestviewMock.enqueue(new MockResponse().setResponseCode(401));
+        FilePath fp = new FilePath(new File(this.getClass().getResource("/demo_test_results").getPath()));
+
+        PrintStream logger = new PrintStream(System.out);
+
+        Map<String, Object> metadata = createMetadata();
+
+        xlTestServer.uploadTestRun("testspecid", fp, "**/*.xml", null, metadata, logger);
+    }
 
     @Test(expectedExceptions = PaymentRequiredException.class, expectedExceptionsMessageRegExp = "The XL TestView server does not have a valid license")
     public void shouldHandleLicenseErrorDuringImport() throws Exception {
         xltestviewMock.enqueue(new MockResponse().setResponseCode(402));
+        FilePath fp = new FilePath(new File(this.getClass().getResource("/demo_test_results").getPath()));
+
+        PrintStream logger = new PrintStream(System.out);
+
+        Map<String, Object> metadata = createMetadata();
+
+        xlTestServer.uploadTestRun("testspecid", fp, "**/*.xml", null, metadata, logger);
+    }
+
+    @Test(expectedExceptions = ConnectionException.class, expectedExceptionsMessageRegExp = "Cannot find test specification 'testspecid. Please check if the XL TestView server is running and the test specification exists.")
+    public void shouldHandleConnectionErrorDuringImport() throws Exception {
+        xltestviewMock.enqueue(new MockResponse().setResponseCode(404));
         FilePath fp = new FilePath(new File(this.getClass().getResource("/demo_test_results").getPath()));
 
         PrintStream logger = new PrintStream(System.out);
@@ -174,8 +198,6 @@ public class XLTestServerImplTest {
 
         RecordedRequest request = xltestviewMock.takeRequest();
         verifyUploadRequest(request);
-
-
     }
 
     @Test
@@ -195,6 +217,25 @@ public class XLTestServerImplTest {
         assertEquals(request.getHeader("accept"), "application/json; charset=utf-8");
         assertEquals(request.getHeader("authorization"), "Basic YWRtaW46YWRtaW4=");
         assertEquals(request.getBody().readUtf8(), "");
+    }
+
+
+    @Test(expectedExceptions = ConnectionException.class, expectedExceptionsMessageRegExp = "URL is invalid or server is not running")
+    public void shouldFailCheckConnectionWithNotFound() throws IOException, InterruptedException, MessagingException {
+        xltestviewMock.enqueue(new MockResponse()
+                .setResponseCode(HttpStatus.SC_NOT_FOUND));
+
+        xlTestServer.checkConnection();
+
+        xltestviewMock.takeRequest();
+    }
+
+    @Test(expectedExceptions = AuthenticationException.class, expectedExceptionsMessageRegExp = "User 'admin' and the supplied password are unable to log in")
+    public void shouldFailCheckConnectionWithBadCredentials() throws IOException, InterruptedException, MessagingException {
+        xltestviewMock.enqueue(new MockResponse()
+                .setResponseCode(HttpStatus.SC_UNAUTHORIZED));
+
+        xlTestServer.checkConnection();
     }
 
     @Test(expectedExceptions = PaymentRequiredException.class, expectedExceptionsMessageRegExp = "The XL TestView server does not have a valid license")

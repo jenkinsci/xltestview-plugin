@@ -35,6 +35,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.squareup.okhttp.*;
 
+import com.xebialabs.xlt.ci.server.authentication.AuthenticationException;
 import com.xebialabs.xlt.ci.server.authentication.UsernamePassword;
 import com.xebialabs.xlt.ci.server.domain.ImportError;
 import com.xebialabs.xlt.ci.server.domain.TestSpecification;
@@ -135,11 +136,11 @@ public class XLTestServerImpl implements XLTestServer {
                 case 200:
                     return;
                 case 401:
-                    throw new IllegalStateException("Credentials are invalid");
+                    throw new AuthenticationException(String.format("User '%s' and the supplied password are unable to log in", credentials.getUsername()));
                 case 402:
                     throw new PaymentRequiredException("The XL TestView server does not have a valid license");
                 case 404:
-                    throw new IllegalStateException("URL is invalid or server is not running");
+                    throw new ConnectionException("URL is invalid or server is not running");
                 default:
                     throw new IllegalStateException("Unknown error. Status code: " + response.code() + ". Response message: " + response.toString());
             }
@@ -194,17 +195,18 @@ public class XLTestServerImpl implements XLTestServer {
                 case 400:
                     importError = mapper.readValue(response.body().byteStream(), ImportError.class);
                     throw new IllegalStateException(importError.getMessage());
+                case 401:
+                    throw new AuthenticationException(String.format("User '%s' and the supplied password are unable to log in", credentials.getUsername()));
                 case 402:
                     throw new PaymentRequiredException("The XL TestView server does not have a valid license");
+                case 404:
+                    throw new ConnectionException("Cannot find test specification '" + testSpecificationId + ". Please check if the XL TestView server is " +
+                            "running and the test specification exists.");
                 case 422:
                     logWarn(logger, "Unable to process results.");
                     logWarn(logger, "Are you sure your include/exclude pattern provides all needed files for the test tool?");
                     importError = mapper.readValue(response.body().byteStream(), ImportError.class);
                     throw new IllegalStateException(importError.getMessage());
-                case 401:
-                    throw new IllegalStateException("Credentials are invalid");
-                case 404:
-                    throw new IllegalArgumentException("Test specification '" + testSpecificationId + "' does not exists?");
                 default:
                     throw new IllegalStateException("Unknown error. Status code: " + response.code() + ". Response message: " + response.toString());
             }
