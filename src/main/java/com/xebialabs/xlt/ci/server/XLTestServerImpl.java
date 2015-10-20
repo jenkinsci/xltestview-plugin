@@ -35,6 +35,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.squareup.okhttp.*;
 
+import com.xebialabs.xlt.ci.server.authentication.AuthenticationException;
 import com.xebialabs.xlt.ci.server.authentication.UsernamePassword;
 import com.xebialabs.xlt.ci.server.domain.ImportError;
 import com.xebialabs.xlt.ci.server.domain.TestSpecification;
@@ -51,7 +52,7 @@ import static org.apache.commons.io.IOUtils.closeQuietly;
 public class XLTestServerImpl implements XLTestServer {
     private static final Logger LOG = LoggerFactory.getLogger(XLTestServerImpl.class);
 
-    public static final String XL_TEST_LOG_FORMAT = "[XL TestView] [%s] %s\n";
+    public static final String XL_TEST_LOG_FORMAT = "[XL TestView] [%s] %s%n";
     public static final TypeReference<Map<String, TestSpecification>> MAP_OF_TESTSPECIFICATION = new TypeReference<Map<String, TestSpecification>>() {
     };
 
@@ -124,10 +125,6 @@ public class XLTestServerImpl implements XLTestServer {
     public void checkConnection() {
         try {
             LOG.info("Checking connection to {}", serverUrl);
-            String serverUrl = this.serverUrl.toString();
-            if (serverUrl.length() > 1 && serverUrl.endsWith("/")) {
-                serverUrl = serverUrl.substring(0, serverUrl.length() - 1);
-            }
             Request request = createRequestFor(API_CONNECTION_CHECK);
 
             Response response = client.newCall(request).execute();
@@ -135,9 +132,11 @@ public class XLTestServerImpl implements XLTestServer {
                 case 200:
                     return;
                 case 401:
-                    throw new IllegalStateException("Credentials are invalid");
+                    throw new AuthenticationException(String.format("User '%s' and the supplied password are unable to log in", credentials.getUsername()));
+                case 402:
+                    throw new PaymentRequiredException("The XL TestView server does not have a valid license");
                 case 404:
-                    throw new IllegalStateException("URL is invalid or server is not running");
+                    throw new ConnectionException("URL is invalid or server is not running");
                 default:
                     throw new IllegalStateException("Unknown error. Status code: " + response.code() + ". Response message: " + response.toString());
             }
@@ -192,15 +191,18 @@ public class XLTestServerImpl implements XLTestServer {
                 case 400:
                     importError = mapper.readValue(response.body().byteStream(), ImportError.class);
                     throw new IllegalStateException(importError.getMessage());
+                case 401:
+                    throw new AuthenticationException(String.format("User '%s' and the supplied password are unable to log in", credentials.getUsername()));
+                case 402:
+                    throw new PaymentRequiredException("The XL TestView server does not have a valid license");
+                case 404:
+                    throw new ConnectionException("Cannot find test specification '" + testSpecificationId + ". Please check if the XL TestView server is " +
+                            "running and the test specification exists.");
                 case 422:
                     logWarn(logger, "Unable to process results.");
                     logWarn(logger, "Are you sure your include/exclude pattern provides all needed files for the test tool?");
                     importError = mapper.readValue(response.body().byteStream(), ImportError.class);
                     throw new IllegalStateException(importError.getMessage());
-                case 401:
-                    throw new IllegalStateException("Credentials are invalid");
-                case 404:
-                    throw new IllegalArgumentException("Test specification '" + testSpecificationId + "' does not exists?");
                 default:
                     throw new IllegalStateException("Unknown error. Status code: " + response.code() + ". Response message: " + response.toString());
             }
@@ -247,19 +249,11 @@ public class XLTestServerImpl implements XLTestServer {
     }
 
     private void logInfo(PrintStream logger, String message) {
-        LOG.info(message);
         logger.printf(XL_TEST_LOG_FORMAT, "INFO", message);
     }
 
     private void logWarn(PrintStream logger, String message) {
-        LOG.warn(message);
         logger.printf(XL_TEST_LOG_FORMAT, "WARN", message);
-    }
-
-    private void log(PrintStream logger, String level, String message, Exception e) {
-        if (e != null) {
-            LOG.error("Exception ", e);
-        }
     }
 
     private class CloseIgnoringOutputStream extends OutputStream {
