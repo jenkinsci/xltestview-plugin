@@ -1,19 +1,20 @@
 package com.xebialabs.xlt.ci;
 
+import java.util.Map;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.google.common.base.Objects;
 import com.google.inject.Inject;
+
 import com.xebialabs.xlt.ci.server.XLTestServer;
 import com.xebialabs.xlt.ci.server.XLTestServerFactory;
 import com.xebialabs.xlt.ci.server.domain.TestSpecification;
+
 import hudson.Extension;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.util.ListBoxModel;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.Map;
 
 import static java.lang.String.format;
 
@@ -24,13 +25,15 @@ public class TestSpecificationDescribable extends AbstractDescribableImpl<TestSp
     private final String testSpecificationId;
     private final String includes;
     private final String excludes;
+    private final boolean makeUnstable;
 
     @DataBoundConstructor
-    public TestSpecificationDescribable(String testSpecificationId, String includes, String excludes) {
+    public TestSpecificationDescribable(String testSpecificationId, String includes, String excludes, Boolean makeUnstable) {
         LOG.debug("TestSpecificationDescribable testSpecId={} includes={} excludes={}", testSpecificationId, includes, excludes);
         this.includes = includes;
         this.excludes = excludes;
         this.testSpecificationId = testSpecificationId;
+        this.makeUnstable = makeUnstable == null || makeUnstable;
     }
 
     // this getter must correspond with the name of the field in the config.jelly else the selected value is not filled in
@@ -46,12 +49,17 @@ public class TestSpecificationDescribable extends AbstractDescribableImpl<TestSp
         return includes;
     }
 
+    public boolean getMakeUnstable() {
+        return makeUnstable;
+    }
+
     @Override
     public String toString() {
         return Objects.toStringHelper(this)
                 .add("testSpecificationId", testSpecificationId)
                 .add("includes", includes)
                 .add("excludes", excludes)
+                .add("makeUnstable", makeUnstable)
                 .toString();
     }
 

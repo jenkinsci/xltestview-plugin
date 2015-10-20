@@ -22,14 +22,31 @@
  */
 package com.xebialabs.xlt.ci;
 
+import java.io.IOException;
+import java.io.PrintStream;
+import java.io.Serializable;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.kohsuke.stapler.AncestorInPath;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.StaplerRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.common.StandardUsernameListBoxModel;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.SchemeRequirement;
 import com.google.common.base.Objects;
 import com.google.common.base.Strings;
+
 import com.xebialabs.xlt.ci.server.XLTestServer;
 import com.xebialabs.xlt.ci.server.XLTestServerFactory;
+
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -43,28 +60,13 @@ import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
-import org.kohsuke.stapler.AncestorInPath;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.StaplerRequest;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.io.PrintStream;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import static com.cloudbees.plugins.credentials.CredentialsProvider.lookupCredentials;
 import static hudson.util.FormValidation.error;
 import static hudson.util.FormValidation.ok;
 
 // TODO: should use Recorder if we want to fail the build based upon a Qualification see ArtifactArchiver
-public class XLTestView extends Notifier {
+public class XLTestView extends Notifier implements Serializable{
 
     private final static Logger LOG = LoggerFactory.getLogger(XLTestView.class);
 
@@ -131,9 +133,14 @@ public class XLTestView extends Notifier {
                 if (build.getResult().equals(Result.FAILURE)) {
                     logger.printf("[XL TestView] Reason: %s\n", e.getMessage());
                 } else {
-                    logger.printf("[XL TestView] XL TestView changes the build status to UNSTABLE\n");
-                    logger.printf("[XL TestView] Reason: %s\n", e.getMessage());
-                    build.setResult(Result.UNSTABLE);
+                    if (ts.getMakeUnstable()) {
+                        logger.printf("[XL TestView] XL TestView changes the build status to UNSTABLE\n");
+                        logger.printf("[XL TestView] Reason: %s\n", e.getMessage());
+                        build.setResult(Result.UNSTABLE);
+                    } else {
+                        logger.printf("[XL TestView] XL TestView produced an exception, but build status is left unchanged\n");
+                        logger.printf("[XL TestView] Reason: %s\n", e.getMessage());
+                    }
                 }
             }
         }
@@ -141,7 +148,8 @@ public class XLTestView extends Notifier {
         return true;
     }
 
-    private void uploadTestRun(TestSpecificationDescribable ts, Map<String, Object> metadata, FilePath workspace, PrintStream logger) throws InterruptedException, IOException {
+    private void uploadTestRun(TestSpecificationDescribable ts, Map<String, Object> metadata, FilePath workspace, PrintStream logger) throws
+            InterruptedException, IOException {
         try {
             // TODO: title would be nicer..
             logger.printf("[XL TestView] Uploading test run for test specification with id '%s'\n", ts.getTestSpecificationId());
