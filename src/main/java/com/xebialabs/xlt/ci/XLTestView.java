@@ -245,7 +245,7 @@ public class XLTestView extends Notifier implements Serializable{
 
         @Override
         public String getDisplayName() {
-            return "Send test results to XL TestView";
+            return Messages.XLTestView_displayName();
         }
 
         public FormValidation doTestConnection(@QueryParameter("serverUrl") final String serverUrl,
