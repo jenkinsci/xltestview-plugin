@@ -25,7 +25,7 @@ public class TestSpecificationDescribable extends AbstractDescribableImpl<TestSp
     private final String testSpecificationId;
     private final String includes;
     private final String excludes;
-    private final Boolean makeUnstable;
+    private final boolean makeUnstable;
 
     @DataBoundConstructor
     public TestSpecificationDescribable(String testSpecificationId, String includes, String excludes, Boolean makeUnstable) {
@@ -33,7 +33,7 @@ public class TestSpecificationDescribable extends AbstractDescribableImpl<TestSp
         this.includes = includes;
         this.excludes = excludes;
         this.testSpecificationId = testSpecificationId;
-        this.makeUnstable = makeUnstable;
+        this.makeUnstable = makeUnstable == null || makeUnstable;
     }
 
     // this getter must correspond with the name of the field in the config.jelly else the selected value is not filled in
@@ -49,7 +49,7 @@ public class TestSpecificationDescribable extends AbstractDescribableImpl<TestSp
         return includes;
     }
 
-    public Boolean getMakeUnstable() {
+    public boolean getMakeUnstable() {
         return makeUnstable;
     }
 
