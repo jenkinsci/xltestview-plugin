@@ -208,7 +208,8 @@ public class XLTestServerImpl implements XLTestServer {
             throw new IllegalArgumentException(e);
         } catch (IOException e) {
             e.printStackTrace();
-            throw new IOException("I/O error uploading test run data to " + serverUrl.toString(), e);
+            LOG.warn("I/O error uploading test run data to {} {}\n{}", serverUrl.toString(), e.toString(), e);
+            throw new IOException("I/O error uploading test run data to " + serverUrl.toString() + " " + e.toString(), e);
         }
     }
 
