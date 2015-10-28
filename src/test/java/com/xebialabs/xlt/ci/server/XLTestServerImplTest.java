@@ -32,6 +32,7 @@ import hudson.FilePath;
 import hudson.util.ListBoxModel;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.mockito.Mockito.when;
@@ -250,9 +251,9 @@ public class XLTestServerImplTest {
         assertEquals(request.getHeader("accept"), "application/json; charset=utf-8");
         assertEquals(request.getHeader("authorization"), "Basic YWRtaW46YWRtaW4=");
         assertThat(request.getHeader("Content-Length"), is(nullValue()));
-        assertThat(request.getChunkSizes().get(0), is(2048));
-        assertThat(request.getChunkSizes().size(), is(23));
-        assertThat(request.getChunkSizes().get(22), is(1036));
+        assertThat(request.getHeader("Transfer-Encoding"), is("chunked"));
+        assertThat(request.getChunkSizes().get(0), greaterThan(0));
+        assertThat(request.getChunkSizes().size(), greaterThan(0));
 
         assertTrue(request.getBodySize() > 0);
 
