@@ -1,0 +1,33 @@
+Version 1.1.0 (November 18, 2015)
+
+Possible breaking changes:
+
+* Build with Java 1.7 and depend on Jenkins 1.609.1. Starting with this version
+  jenkins will need to run with Java 1.7.
+
+Bugfixes
+
+* Do not send extra slashes in the XL TestView REST calls when there are extra
+  trailing slashes in the XL TestView server configuration.
+* Upload test data using chunked encoding.
+
+Improvements
+
+* Improved exception handling for authentication and connection errors
+* Explicitly deal with cases where the XL TestView license expired.
+* Add option to not change the build status when there is a problem
+  communicating with XL TestView.
+* Send user agent identifying the version of the plugin.
+* Improve help messages.
+* Improve error messages.
+* Fix IntelliJ project generation.
+
+Version 1.0.1 (June 16, 2015)
+
+* Fix filtering of test specification sets in the post build step.
+* Small textual improvements.
+
+Version 1.0.0 (June 9, 2015)
+
+* Upload test results to a test specification.
+* Upload different types of test results to test specifications.
