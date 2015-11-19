@@ -103,7 +103,7 @@ public class XLTestServerImpl implements XLTestServer {
                     .url(url)
                     .header("User-Agent", getUserAgent())
                     .header("Accept", APPLICATION_JSON_UTF_8)
-                    .header("Authorization", createCredential())
+                    .header("Authorization", createCredentials())
                     .build();
 
         } catch (MalformedURLException e) {
@@ -127,7 +127,7 @@ public class XLTestServerImpl implements XLTestServer {
         return new URL(serverUrl, spec);
     }
 
-    private String createCredential() {
+    private String createCredentials() {
         return Credentials.basic(credentials.getUsername(), credentials.getPassword());
     }
 
@@ -183,7 +183,7 @@ public class XLTestServerImpl implements XLTestServer {
                     .url(createSensibleURL(API_IMPORT + "/" + testSpecificationId, serverUrl))
                     .header("User-Agent", getUserAgent())
                     .header("Accept", APPLICATION_JSON_UTF_8)
-                    .header("Authorization", createCredential())
+                    .header("Authorization", createCredentials())
                     .header("Transfer-Encoding", "chunked")
                     .post(body)
                     .build();
