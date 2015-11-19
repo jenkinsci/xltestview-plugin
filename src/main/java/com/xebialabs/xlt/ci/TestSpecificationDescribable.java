@@ -25,15 +25,17 @@ public class TestSpecificationDescribable extends AbstractDescribableImpl<TestSp
     private final String testSpecificationId;
     private final String includes;
     private final String excludes;
-    private final boolean makeUnstable;
+    private final Boolean makeUnstable;
 
+    // Attention: This constructor is *NOT* used when loading the config.xml, so previously stored TestSpecificationDescribable's have
+    // their values injected via some other way. :'(
     @DataBoundConstructor
     public TestSpecificationDescribable(String testSpecificationId, String includes, String excludes, Boolean makeUnstable) {
-        LOG.debug("TestSpecificationDescribable testSpecId={} includes={} excludes={}", testSpecificationId, includes, excludes);
+        LOG.debug("TestSpecificationDescribable testSpecId={} includes={} excludes={} makeUnstable={}", testSpecificationId, includes, excludes, makeUnstable);
         this.includes = includes;
         this.excludes = excludes;
         this.testSpecificationId = testSpecificationId;
-        this.makeUnstable = makeUnstable == null || makeUnstable;
+        this.makeUnstable = makeUnstable;
     }
 
     // this getter must correspond with the name of the field in the config.jelly else the selected value is not filled in
@@ -49,8 +51,9 @@ public class TestSpecificationDescribable extends AbstractDescribableImpl<TestSp
         return includes;
     }
 
+    // Previous jenkins plugin would affect build stability by default. So if value is not known, keep doing that.
     public boolean getMakeUnstable() {
-        return makeUnstable;
+        return makeUnstable == null || makeUnstable;
     }
 
     @Override
