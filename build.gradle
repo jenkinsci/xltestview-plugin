@@ -49,9 +49,6 @@ targetCompatibility = '1.7'
 
 com.xebialabs.gradle.plugins.release.util.VersionUtil.setVersion(project)
 
-// Disable debugging when running Jenkins JPI server task, because it causes slow performance
-System.setProperty("stapler.jelly.noCache", "false")
-
 if (project.rootProject == project) {
     String msg = "${project.name}-${project.version}"
     println "+".padRight(msg.length() + 3, '-') + "+"
