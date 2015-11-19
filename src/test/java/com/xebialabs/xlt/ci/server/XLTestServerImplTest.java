@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -31,7 +33,9 @@ import com.xebialabs.xlt.ci.server.domain.TestSpecification;
 import hudson.FilePath;
 import hudson.util.ListBoxModel;
 
+import static com.xebialabs.xlt.ci.server.XLTestServerImpl.createSensibleURL;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.nullValue;
@@ -218,6 +222,12 @@ public class XLTestServerImplTest {
         assertEquals(request.getBody().readUtf8(), "");
     }
 
+    @Test
+    public void createSensibleURLCanDealWithSlashes() throws IOException, InterruptedException, MessagingException, URISyntaxException {
+        assertThat(createSensibleURL("/api/foo/bar", new URL("http://www.myawesomeci.com/xltest/")), equalTo(new URL("http://www.myawesomeci.com/xltest/api/foo/bar")));
+        assertThat(createSensibleURL("api/foo/bar", new URL("http://www.myawesomeci.com/xltest/")), equalTo(new URL("http://www.myawesomeci.com/xltest/api/foo/bar")));
+        assertThat(createSensibleURL("/api/foo/bar", new URL("http://www.myawesomeci.com/xltest")), equalTo(new URL("http://www.myawesomeci.com/xltest/api/foo/bar")));
+    }
 
     @Test(expectedExceptions = ConnectionException.class, expectedExceptionsMessageRegExp = "URL is invalid or server is not running")
     public void shouldFailCheckConnectionWithNotFound() throws IOException, InterruptedException, MessagingException {

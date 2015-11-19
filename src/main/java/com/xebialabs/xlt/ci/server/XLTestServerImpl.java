@@ -97,13 +97,13 @@ public class XLTestServerImpl implements XLTestServer {
 
     private Request createRequestFor(String relativeUrl) {
         try {
-            URL url = createUrl(relativeUrl);
+            URL url = createSensibleURL(relativeUrl, serverUrl);
 
             return new Request.Builder()
                     .url(url)
                     .header("User-Agent", getUserAgent())
                     .header("Accept", APPLICATION_JSON_UTF_8)
-                    .header("Authorization", createCredential())
+                    .header("Authorization", createCredentials())
                     .build();
 
         } catch (MalformedURLException e) {
@@ -113,11 +113,21 @@ public class XLTestServerImpl implements XLTestServer {
         }
     }
 
-    private URL createUrl(String relativeUrl) throws MalformedURLException, URISyntaxException {
-        return new URL(serverUrl, relativeUrl);
+    public static URL createSensibleURL(String relativeUrl, URL serverUrl) throws MalformedURLException, URISyntaxException {
+        String spec = serverUrl.getPath();
+        if (spec.endsWith("/")) {
+            if (relativeUrl.startsWith("/")) {
+                spec += relativeUrl.substring(1);
+            } else {
+                spec += relativeUrl;
+            }
+        } else {
+            spec += relativeUrl;
+        }
+        return new URL(serverUrl, spec);
     }
 
-    private String createCredential() {
+    private String createCredentials() {
         return Credentials.basic(credentials.getUsername(), credentials.getPassword());
     }
 
@@ -170,10 +180,10 @@ public class XLTestServerImpl implements XLTestServer {
                     .build();
 
             Request request = new Request.Builder()
-                    .url(createUrl(API_IMPORT + "/" + testSpecificationId))
+                    .url(createSensibleURL(API_IMPORT + "/" + testSpecificationId, serverUrl))
                     .header("User-Agent", getUserAgent())
                     .header("Accept", APPLICATION_JSON_UTF_8)
-                    .header("Authorization", createCredential())
+                    .header("Authorization", createCredentials())
                     .header("Transfer-Encoding", "chunked")
                     .post(body)
                     .build();
