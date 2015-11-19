@@ -32,7 +32,7 @@
                     <f:entry field="excludes" title="${%Exclude pattern}">
                         <f:textbox default=""/>
                     </f:entry>
-                    <f:entry title="${%Allow the XL TestView plugin to alter your build status}">
+                    <f:entry title="${%Mark build as unstable if sending test results fails}">
                         <f:checkbox checked="true" field="makeUnstable" />
                     </f:entry>
                     <f:entry title="">
