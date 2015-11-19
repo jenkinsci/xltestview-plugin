@@ -32,7 +32,6 @@ public class TestSpecificationDescribable extends AbstractDescribableImpl<TestSp
     @DataBoundConstructor
     public TestSpecificationDescribable(String testSpecificationId, String includes, String excludes, Boolean makeUnstable) {
         LOG.debug("TestSpecificationDescribable testSpecId={} includes={} excludes={} makeUnstable={}", testSpecificationId, includes, excludes, makeUnstable);
-        System.out.println(String.format("TestSpecificationDescribable testSpecId=%s includes=%s excludes=%s makeUnstable=%s", testSpecificationId, includes, excludes, makeUnstable));
         this.includes = includes;
         this.excludes = excludes;
         this.testSpecificationId = testSpecificationId;

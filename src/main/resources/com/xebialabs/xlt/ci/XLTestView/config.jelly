@@ -32,8 +32,8 @@
                     <f:entry field="excludes" title="${%Exclude pattern}">
                         <f:textbox default=""/>
                     </f:entry>
-                    <f:entry title="${%Mark build as unstable if sending test results fails}">
-                        <f:checkbox checked="true" field="makeUnstable" />
+                    <f:entry field="makeUnstable" title="${%Mark build as unstable if sending test results fails}">
+                        <f:checkbox checked="true" />
                     </f:entry>
                     <f:entry title="">
                         <div align="right">
