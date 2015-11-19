@@ -29,7 +29,7 @@ buildscript {
         }
     }
     dependencies {
-        classpath 'org.jenkins-ci.tools:gradle-jpi-plugin:0.11.1'
+        classpath 'org.jenkins-ci.tools:gradle-jpi-plugin:0.14.0'
         classpath 'org.eclipse.jgit:org.eclipse.jgit:3.6.1.201501031845-r'
     }
 }
@@ -48,6 +48,9 @@ sourceCompatibility = '1.7'
 targetCompatibility = '1.7'
 
 com.xebialabs.gradle.plugins.release.util.VersionUtil.setVersion(project)
+
+// Disable debugging when running Jenkins JPI server task, because it causes slow performance
+System.setProperty("stapler.jelly.noCache", "false")
 
 if (project.rootProject == project) {
     String msg = "${project.name}-${project.version}"
