@@ -34,6 +34,7 @@ import hudson.FilePath;
 import hudson.util.ListBoxModel;
 
 import static com.xebialabs.xlt.ci.server.XLTestServerImpl.createSensibleURL;
+import static com.xebialabs.xlt.ci.server.XLTestServerImpl.removeTrailingSlashes;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
@@ -227,6 +228,8 @@ public class XLTestServerImplTest {
         assertThat(createSensibleURL("/api/foo/bar", new URL("http://www.myawesomeci.com/xltest/")), equalTo(new URL("http://www.myawesomeci.com/xltest/api/foo/bar")));
         assertThat(createSensibleURL("api/foo/bar", new URL("http://www.myawesomeci.com/xltest/")), equalTo(new URL("http://www.myawesomeci.com/xltest/api/foo/bar")));
         assertThat(createSensibleURL("/api/foo/bar", new URL("http://www.myawesomeci.com/xltest")), equalTo(new URL("http://www.myawesomeci.com/xltest/api/foo/bar")));
+        assertThat(createSensibleURL("/api/foo/bar", new URL("http://www.myawesomeci.com/xltest//")), equalTo(new URL("http://www.myawesomeci.com/xltest/api/foo/bar")));
+        assertThat(createSensibleURL("/api/foo/bar", new URL("http://www.myawesomeci.com/xltest/////")), equalTo(new URL("http://www.myawesomeci.com/xltest/api/foo/bar")));
     }
 
     @Test(expectedExceptions = ConnectionException.class, expectedExceptionsMessageRegExp = "URL is invalid or server is not running")
