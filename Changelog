@@ -13,11 +13,11 @@ Bugfixes
 
 Improvements
 
-* Improved exception handling for authentication and connection errors
-* Explicitly deal with cases where the XL TestView license expired.
 * Add option to not change the build status when there is a problem
   communicating with XL TestView.
 * Send user agent identifying the version of the plugin.
+* Explicitly deal with cases where the XL TestView license expired.
+* Improved exception handling for authentication and connection errors.
 * Improve help messages.
 * Improve error messages.
 * Fix IntelliJ project generation.
