@@ -71,7 +71,7 @@ public class XLTestServerImpl implements XLTestServer {
 
     XLTestServerImpl(String serverUrl, String proxyUrl, UsernamePassword credentials) {
         try {
-            this.serverUrl = new URL(serverUrl);
+            this.serverUrl = new URL(removeTrailingSlashes(serverUrl));
         } catch (MalformedURLException e) {
             throw new IllegalArgumentException(e);
         }
@@ -114,17 +114,20 @@ public class XLTestServerImpl implements XLTestServer {
     }
 
     public static URL createSensibleURL(String relativeUrl, URL serverUrl) throws MalformedURLException, URISyntaxException {
-        String spec = serverUrl.getPath();
-        if (spec.endsWith("/")) {
-            if (relativeUrl.startsWith("/")) {
-                spec += relativeUrl.substring(1);
-            } else {
-                spec += relativeUrl;
-            }
-        } else {
-            spec += relativeUrl;
+        // normalize URL parts:
+        // spec should not end with "/"
+        // relative URL should start with "/"
+        String spec = removeTrailingSlashes(serverUrl.getPath());
+
+        if (!relativeUrl.startsWith("/")) {
+            relativeUrl = "/" + relativeUrl;
         }
-        return new URL(serverUrl, spec);
+
+        return new URL(serverUrl, spec + relativeUrl);
+    }
+
+    public static String removeTrailingSlashes(String url) {
+        return url.replaceFirst("/*$", "");
     }
 
     private String createCredentials() {
