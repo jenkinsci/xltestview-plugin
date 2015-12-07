@@ -32,6 +32,6 @@ import java.util.Map;
 public interface XLTestServer {
     void checkConnection();
     Map<String, TestSpecification> getTestSpecifications();
-    void uploadTestRun(String testSpecificationId, FilePath workspace, String includes, String excludes, Map<String, Object> metadata, PrintStream logger) throws InterruptedException, IOException;
+    void uploadTestRun(String testSpecificationName, FilePath workspace, String includes, String excludes, Map<String, Object> metadata, PrintStream logger) throws InterruptedException, IOException;
     Object getVersion();
 }

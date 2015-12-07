@@ -13,3 +13,6 @@ work
 /bin
 .idea
 /src/generated-localizer
+/buildSrc/.nb-gradle/profiles/private/
+/.nb-gradle/private/
+/buildSrc/.nb-gradle/private/

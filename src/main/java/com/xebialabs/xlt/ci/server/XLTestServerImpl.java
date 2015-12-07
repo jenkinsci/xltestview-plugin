@@ -7,18 +7,18 @@
  * GPLv2 as it is applied to this software, see the FLOSS License Exception
  * <https://github.com/jenkinsci/xltestview-plugin/blob/master/LICENSE>.
  * <p/>
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation; version 2 of the License.
+ * This program is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation; version 2 of the License.
  * <p/>
  * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
- * more details.
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  * <p/>
  * You should have received a copy of the GNU General Public License along with
- * this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+ * this program; if not, write to the Free Software Foundation, Inc., 51
+ * Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 package com.xebialabs.xlt.ci.server;
 
@@ -33,7 +33,9 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.Inject;
 import com.squareup.okhttp.*;
+import com.xebialabs.xlt.ci.XLTestView;
 
 import com.xebialabs.xlt.ci.server.authentication.AuthenticationException;
 import com.xebialabs.xlt.ci.server.authentication.UsernamePassword;
@@ -49,11 +51,13 @@ import okio.BufferedSink;
 import static java.lang.String.format;
 import static org.apache.commons.io.IOUtils.closeQuietly;
 
-public class XLTestServerImpl implements XLTestServer {
+public class XLTestServerImpl implements XLTestServer
+{
     private static final Logger LOG = LoggerFactory.getLogger(XLTestServerImpl.class);
 
     public static final String XL_TEST_LOG_FORMAT = "[XL TestView] [%s] %s%n";
-    public static final TypeReference<Map<String, TestSpecification>> MAP_OF_TESTSPECIFICATION = new TypeReference<Map<String, TestSpecification>>() {
+    public static final TypeReference<Map<String, TestSpecification>> MAP_OF_TESTSPECIFICATION = new TypeReference<Map<String, TestSpecification>>()
+    {
     };
 
     public static final String API_CONNECTION_CHECK = "/api/internal/data";
@@ -69,13 +73,17 @@ public class XLTestServerImpl implements XLTestServer {
 
     private UsernamePassword credentials;
 
-    XLTestServerImpl(String serverUrl, String proxyUrl, UsernamePassword credentials) {
-        try {
+    XLTestServerImpl(String serverUrl, String proxyUrl, UsernamePassword credentials)
+    {
+        try
+        {
             this.serverUrl = new URL(removeTrailingSlashes(serverUrl));
-        } catch (MalformedURLException e) {
+        } catch (MalformedURLException e)
+        {
             throw new IllegalArgumentException(e);
         }
-        if (credentials == null) {
+        if (credentials == null)
+        {
             throw new IllegalArgumentException("Need credentials to connect to " + serverUrl);
         }
         this.credentials = credentials;
@@ -83,20 +91,24 @@ public class XLTestServerImpl implements XLTestServer {
         setupHttpClient();
     }
 
-    private void setupHttpClient() {
+    private void setupHttpClient()
+    {
         // TODO: make configurable ?
         client.setConnectTimeout(10, TimeUnit.SECONDS);
         client.setWriteTimeout(10, TimeUnit.SECONDS);
         client.setReadTimeout(30, TimeUnit.SECONDS);
 
-        if (proxyUrl != null) {
+        if (proxyUrl != null)
+        {
             Proxy p = new Proxy(Proxy.Type.HTTP, InetSocketAddress.createUnresolved(proxyUrl.getHost(), proxyUrl.getPort()));
             client.setProxy(p);
         }
     }
 
-    private Request createRequestFor(String relativeUrl) {
-        try {
+    private Request createRequestFor(String relativeUrl)
+    {
+        try
+        {
             URL url = createSensibleURL(relativeUrl, serverUrl);
 
             return new Request.Builder()
@@ -106,42 +118,51 @@ public class XLTestServerImpl implements XLTestServer {
                     .header("Authorization", createCredentials())
                     .build();
 
-        } catch (MalformedURLException e) {
+        } catch (MalformedURLException e)
+        {
             throw new IllegalArgumentException(e);
-        } catch (URISyntaxException e) {
+        } catch (URISyntaxException e)
+        {
             throw new IllegalArgumentException(e);
         }
     }
 
-    public static URL createSensibleURL(String relativeUrl, URL serverUrl) throws MalformedURLException, URISyntaxException {
+    public static URL createSensibleURL(String relativeUrl, URL serverUrl) throws MalformedURLException, URISyntaxException
+    {
         // normalize URL parts:
         // spec should not end with "/"
         // relative URL should start with "/"
         String spec = removeTrailingSlashes(serverUrl.getPath());
 
-        if (!relativeUrl.startsWith("/")) {
+        if (!relativeUrl.startsWith("/"))
+        {
             relativeUrl = "/" + relativeUrl;
         }
 
         return new URL(serverUrl, spec + relativeUrl);
     }
 
-    public static String removeTrailingSlashes(String url) {
+    public static String removeTrailingSlashes(String url)
+    {
         return url.replaceFirst("/*$", "");
     }
 
-    private String createCredentials() {
+    private String createCredentials()
+    {
         return Credentials.basic(credentials.getUsername(), credentials.getPassword());
     }
 
     @Override
-    public void checkConnection() {
-        try {
+    public void checkConnection()
+    {
+        try
+        {
             LOG.info("Checking connection to {}", serverUrl);
             Request request = createRequestFor(API_CONNECTION_CHECK);
 
             Response response = client.newCall(request).execute();
-            switch (response.code()) {
+            switch (response.code())
+            {
                 case 200:
                     return;
                 case 401:
@@ -153,23 +174,59 @@ public class XLTestServerImpl implements XLTestServer {
                 default:
                     throw new IllegalStateException("Unknown error. Status code: " + response.code() + ". Response message: " + response.toString());
             }
-        } catch (IOException e) {
+        } catch (IOException e)
+        {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public Object getVersion() {
+    public Object getVersion()
+    {
         return serverUrl;
     }
 
     @Override
-    public void uploadTestRun(String testSpecificationId, FilePath workspace, String includes, String excludes, Map<String, Object> metadata, PrintStream
-            logger) throws IOException, InterruptedException {
-        if (testSpecificationId == null || testSpecificationId.isEmpty()) {
-            throw new IllegalArgumentException("No test specification id specified. Does the test specification still exist in XL TestView?");
+    public void uploadTestRun(String testSpecificationName, FilePath workspace, String includes, String excludes, Map<String, Object> metadata, PrintStream logger) throws IOException, InterruptedException
+    {
+        if (testSpecificationName == null || testSpecificationName.isEmpty())
+        {
+            throw new IllegalArgumentException("[XL TestView] No test specification name specified. Does the test specification still exist in XL TestView?");
         }
-        try {
+        
+        LOG.debug("[XL TestServer] uploadTestRun : begin : "+testSpecificationName);
+
+        // get the test specification id
+        Map<String, TestSpecification> tsMap = getTestSpecifications();
+
+        if ( tsMap == null || tsMap.isEmpty() )
+        {
+            throw new IllegalArgumentException("[XL TestView] No test specification retrieved from "+this.serverUrl);
+        }
+        
+        String testSpecificationId = "";
+        for ( TestSpecification ts : tsMap.values() )
+        {
+            String tsSpecName = ts.getProject().getTitle()+" > "+ts.getTitle();
+            
+            LOG.debug(format("[XL TestServer] Checking test specification '%s' against name '%s'", tsSpecName, testSpecificationName));
+
+            if ( testSpecificationName.equals(tsSpecName) )
+            {
+                testSpecificationId = ts.getId();
+                break;
+            }
+        }
+        
+        if ( testSpecificationId.isEmpty() )
+        {
+            throw new IllegalArgumentException(format("Cannot find test specification for '%s'", testSpecificationName));
+        }
+
+        // upload test results
+        try
+        {
+            logInfo(logger, format("Pushing test data to specificaiton id '%s'", testSpecificationId));
             logInfo(logger, format("Collecting files from '%s' using include pattern: '%s' and exclude pattern '%s'",
                     workspace.getRemote(), includes, excludes));
 
@@ -194,7 +251,8 @@ public class XLTestServerImpl implements XLTestServer {
             Response response = client.newCall(request).execute();
             ObjectMapper mapper = createMapper();
             ImportError importError;
-            switch (response.code()) {
+            switch (response.code())
+            {
                 case 200:
                     logInfo(logger, "Sent data successfully");
                     return;
@@ -209,8 +267,8 @@ public class XLTestServerImpl implements XLTestServer {
                 case 402:
                     throw new PaymentRequiredException("The XL TestView server does not have a valid license");
                 case 404:
-                    throw new ConnectionException("Cannot find test specification '" + testSpecificationId + ". Please check if the XL TestView server is " +
-                            "running and the test specification exists.");
+                    throw new ConnectionException("Cannot find test specification '" + testSpecificationId + ". Please check if the XL TestView server is "
+                            + "running and the test specification exists.");
                 case 422:
                     logWarn(logger, "Unable to process results.");
                     logWarn(logger, "Are you sure your include/exclude pattern provides all needed files for the test tool?");
@@ -219,28 +277,34 @@ public class XLTestServerImpl implements XLTestServer {
                 default:
                     throw new IllegalStateException("Unknown error. Status code: " + response.code() + ". Response message: " + response.toString());
             }
-        } catch (URISyntaxException e) {
+        } catch (URISyntaxException e)
+        {
             throw new IllegalArgumentException(e);
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (IOException e)
+        {
             LOG.warn("I/O error uploading test run data to {} {}\n{}", serverUrl.toString(), e.toString(), e);
             throw new IOException("I/O error uploading test run data to " + serverUrl.toString() + " " + e.toString(), e);
         }
     }
 
-    private String getUserAgent() {
+    private String getUserAgent()
+    {
         return USER_AGENT + getPluginVersion();
     }
 
-    protected String getPluginVersion() {
-        try {
+    protected String getPluginVersion()
+    {
+        try
+        {
             return " " + Jenkins.getInstance().getPluginManager().getPlugin("xltestview-plugin").getVersion();
-        } catch (Exception e) {
+        } catch (Exception e)
+        {
             return "";
         }
     }
 
-    private ObjectMapper createMapper() {
+    private ObjectMapper createMapper()
+    {
         ObjectMapper mapper = new ObjectMapper();
         // make things lenient...
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -248,8 +312,10 @@ public class XLTestServerImpl implements XLTestServer {
     }
 
     @Override
-    public Map<String, TestSpecification> getTestSpecifications() {
-        try {
+    public Map<String, TestSpecification> getTestSpecifications()
+    {
+        try
+        {
             Request request = createRequestFor(API_TESTSPECIFICATIONS_EXTENDED);
             Response response = client.newCall(request).execute();
 
@@ -257,70 +323,87 @@ public class XLTestServerImpl implements XLTestServer {
             Map<String, TestSpecification> testSpecifications = mapper.readValue(response.body().byteStream(), MAP_OF_TESTSPECIFICATION);
             LOG.debug("Received test specifications: {}", testSpecifications);
             return testSpecifications;
-        } catch (IOException e) {
+        } catch (IOException e)
+        {
             throw new RuntimeException(e);
         }
     }
 
-    private void logInfo(PrintStream logger, String message) {
+    private void logInfo(PrintStream logger, String message)
+    {
         logger.printf(XL_TEST_LOG_FORMAT, "INFO", message);
     }
 
-    private void logWarn(PrintStream logger, String message) {
+    private void logWarn(PrintStream logger, String message)
+    {
         logger.printf(XL_TEST_LOG_FORMAT, "WARN", message);
     }
 
-    private class CloseIgnoringOutputStream extends OutputStream {
+    private class CloseIgnoringOutputStream extends OutputStream
+    {
+
         private final OutputStream wrapped;
 
-        public CloseIgnoringOutputStream(OutputStream wrapped) {
+        public CloseIgnoringOutputStream(OutputStream wrapped)
+        {
             this.wrapped = wrapped;
         }
 
         @Override
-        public void write(int b) throws IOException {
+        public void write(int b) throws IOException
+        {
             wrapped.write(b);
         }
 
         @Override
-        public void close() throws IOException {
+        public void close() throws IOException
+        {
             // let's ignore this...
         }
     }
 
-    private class ZipRequestBody extends RequestBody {
+    private class ZipRequestBody extends RequestBody
+    {
+
         private final FilePath workspace;
         private final DirScanner scanner;
         private final PrintStream logger;
 
-        public ZipRequestBody(FilePath workspace, DirScanner scanner, PrintStream logger) {
+        public ZipRequestBody(FilePath workspace, DirScanner scanner, PrintStream logger)
+        {
             this.workspace = workspace;
             this.scanner = scanner;
             this.logger = logger;
         }
 
         @Override
-        public MediaType contentType() {
+        public MediaType contentType()
+        {
             return MediaType.parse("application/zip");
         }
 
         @Override
-        public long contentLength() {
+        public long contentLength()
+        {
             return -1L;
         }
 
         @Override
-        public void writeTo(BufferedSink sink) throws IOException {
+        public void writeTo(BufferedSink sink) throws IOException
+        {
             ArchiverFactory factory = ArchiverFactory.ZIP;
             OutputStream os = null;
-            try {
+            try
+            {
                 // the archive function 'conveniently' closes our outputstream
                 os = new CloseIgnoringOutputStream(sink.outputStream());
                 int numberOfFilesArchived = workspace.archive(factory, os, scanner);
                 logInfo(logger, format("Zipped %d files", numberOfFilesArchived));
-            } catch (InterruptedException e) {
+            } catch (InterruptedException e)
+            {
                 throw new RuntimeException("Writing of zip interrupted.", e);
-            } finally {
+            } finally
+            {
                 closeQuietly(os);
             }
         }

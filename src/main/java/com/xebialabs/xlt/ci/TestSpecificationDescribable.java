@@ -22,7 +22,7 @@ import static java.lang.String.format;
 public class TestSpecificationDescribable extends AbstractDescribableImpl<TestSpecificationDescribable> {
     private static final Logger LOG = LoggerFactory.getLogger(TestSpecificationDescribable.class);
 
-    private final String testSpecificationId;
+    private final String testSpecificationName;
     private final String includes;
     private final String excludes;
     private final Boolean makeUnstable;
@@ -30,17 +30,17 @@ public class TestSpecificationDescribable extends AbstractDescribableImpl<TestSp
     // Attention: This constructor is *NOT* used when loading the config.xml, so previously stored TestSpecificationDescribable's have
     // their values injected via some other way. :'(
     @DataBoundConstructor
-    public TestSpecificationDescribable(String testSpecificationId, String includes, String excludes, Boolean makeUnstable) {
-        LOG.debug("TestSpecificationDescribable testSpecId={} includes={} excludes={} makeUnstable={}", testSpecificationId, includes, excludes, makeUnstable);
+    public TestSpecificationDescribable(String testSpecificationName, String includes, String excludes, Boolean makeUnstable) {
+        LOG.debug("TestSpecificationDescribable testSpecName={} includes={} excludes={} makeUnstable={}", testSpecificationName, includes, excludes, makeUnstable);
         this.includes = includes;
         this.excludes = excludes;
-        this.testSpecificationId = testSpecificationId;
+        this.testSpecificationName = testSpecificationName;
         this.makeUnstable = makeUnstable;
     }
 
     // this getter must correspond with the name of the field in the config.jelly else the selected value is not filled in
-    public String getTestSpecificationId() {
-        return testSpecificationId;
+    public String getTestSpecificationName() {
+        return testSpecificationName;
     }
 
     public String getExcludes() {
@@ -59,7 +59,7 @@ public class TestSpecificationDescribable extends AbstractDescribableImpl<TestSp
     @Override
     public String toString() {
         return Objects.toStringHelper(this)
-                .add("testSpecificationId", testSpecificationId)
+                .add("testSpecificationName", testSpecificationName)
                 .add("includes", includes)
                 .add("excludes", excludes)
                 .add("makeUnstable", makeUnstable)
@@ -72,27 +72,9 @@ public class TestSpecificationDescribable extends AbstractDescribableImpl<TestSp
          * Stunningly simple solution, if you dig deep enough.
          * This gets automagically set with the descriptor of the XLTestView relevant to this config bit.
          */
-        @Inject
-        private XLTestView.XLTestDescriptor xlTestDescriptor;
-
         @Override
         public String getDisplayName() {
             return "TestSpecification";
-        }
-
-        public ListBoxModel doFillTestSpecificationIdItems() {
-            // no use if no url/creds
-            if (xlTestDescriptor.getServerUrl().isEmpty() || xlTestDescriptor.getCredentialsId().isEmpty()) {
-                return new ListBoxModel();
-            }
-
-            XLTestServer xlTest = XLTestServerFactory.newInstance(
-                    xlTestDescriptor.getServerUrl(),
-                    xlTestDescriptor.getProxyUrl(),
-                    XLTestView.lookupSystemCredentials(xlTestDescriptor.getCredentialsId()));
-
-            Map<String, TestSpecification> ts = xlTest.getTestSpecifications();
-            return getSpecificationOptions(ts);
         }
 
         public static ListBoxModel getSpecificationOptions(Map<String, TestSpecification> ts) {
