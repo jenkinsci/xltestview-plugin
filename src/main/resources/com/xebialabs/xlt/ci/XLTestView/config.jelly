@@ -33,7 +33,7 @@
                         <f:textbox default=""/>
                     </f:entry>
                     <f:entry field="makeUnstable" title="${%Mark build as unstable if sending test results fails}">
-                        <f:checkbox checked="true" />
+                        <f:checkbox default="true" />
                     </f:entry>
                     <f:entry title="">
                         <div align="right">
