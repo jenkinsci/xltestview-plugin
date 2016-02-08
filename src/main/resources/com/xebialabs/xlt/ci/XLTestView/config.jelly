@@ -21,8 +21,8 @@
 
             <f:repeatable var="testSpecification" field="testSpecifications">
                 <table width="100%">
-                    <f:entry field="testSpecificationId" title="${%Choose test specification}">
-                        <f:select/>
+                    <f:entry field="testSpecificationName" title="${%Choose test specification}">
+                        <f:textbox default=""/>
                     </f:entry>
 
                     <f:entry field="includes" title="${%Include pattern}">

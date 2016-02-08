@@ -2,7 +2,10 @@ package com.xebialabs.xlt.ci.server.domain;
 
 import com.google.common.base.Objects;
 
-public class TestSpecification {
+public class TestSpecification
+{
+
+    private String name;
     private String id;
     private String title;
     private String type;
@@ -11,57 +14,81 @@ public class TestSpecification {
     private Qualification qualification;
     private TestTool testTool;
 
-    public String getId() {
+    public String getName()
+    {
+        return name;
+    }
+
+    public void setName(String name)
+    {
+        this.name = name;
+    }
+
+    public String getId()
+    {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(String id)
+    {
         this.id = id;
     }
 
-    public String getType() {
+    public String getType()
+    {
         return type;
     }
 
-    public void setType(String type) {
+    public void setType(String type)
+    {
         this.type = type;
     }
 
-    public String getTitle() {
+    public String getTitle()
+    {
         return title;
     }
 
-    public void setTitle(String title) {
+    public void setTitle(String title)
+    {
         this.title = title;
     }
 
-    public Project getProject() {
+    public Project getProject()
+    {
         return project;
     }
 
-    public void setProject(Project project) {
+    public void setProject(Project project)
+    {
         this.project = project;
     }
 
-    public Qualification getQualification() {
+    public Qualification getQualification()
+    {
         return qualification;
     }
 
-    public void setQualification(Qualification qualification) {
+    public void setQualification(Qualification qualification)
+    {
         this.qualification = qualification;
     }
 
-    public TestTool getTestTool() {
+    public TestTool getTestTool()
+    {
         return testTool;
     }
 
-    public void setTestTool(TestTool testTool) {
+    public void setTestTool(TestTool testTool)
+    {
         this.testTool = testTool;
     }
 
     @Override
-    public String toString() {
+    public String toString()
+    {
         return Objects.toStringHelper(this)
+                .add("name", name)
                 .add("id", id)
                 .add("type", type)
                 .add("title", title)
@@ -70,22 +97,28 @@ public class TestSpecification {
                 .toString();
     }
 
-    public String getQualificationDescription() {
-        if (qualification != null) {
+    public String getQualificationDescription()
+    {
+        if (qualification != null)
+        {
             return qualification.getDescription();
         }
         return "no qualification present";
     }
 
-    public String getTestToolName() {
-        if (testTool != null) {
+    public String getTestToolName()
+    {
+        if (testTool != null)
+        {
             return testTool.getName();
         }
         return "Unknown test tool";
     }
 
-    public String getTestToolDefaultSearchPattern() {
-        if (testTool != null) {
+    public String getTestToolDefaultSearchPattern()
+    {
+        if (testTool != null)
+        {
             return testTool.getDefaultSearchPattern();
         }
         return "Unknown search pattern";
