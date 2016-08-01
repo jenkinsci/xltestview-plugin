@@ -1,3 +1,13 @@
+Version 1.2.0 (August 3, 2016)
+
+* Add the build duration to the metadata sent to XL TestView. This requires XL TestView 1.4.4 or higher. The duration is the time of the build up to the running of the build step.
+
+Version 1.1.1 (February 15, 2016)
+
+Bug fixes
+
+    Ensure that the 'Mark build as unstable if sending test results fails.' check box works properly.
+
 Version 1.1.0 (November 23, 2015)
 
 Possible breaking changes

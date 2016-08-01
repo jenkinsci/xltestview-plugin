@@ -38,6 +38,7 @@ import com.squareup.okhttp.*;
 import com.xebialabs.xlt.ci.server.authentication.AuthenticationException;
 import com.xebialabs.xlt.ci.server.authentication.UsernamePassword;
 import com.xebialabs.xlt.ci.server.domain.ImportError;
+import com.xebialabs.xlt.ci.server.domain.ServerInfo;
 import com.xebialabs.xlt.ci.server.domain.TestSpecification;
 
 import hudson.FilePath;
@@ -56,6 +57,7 @@ public class XLTestServerImpl implements XLTestServer {
     public static final TypeReference<Map<String, TestSpecification>> MAP_OF_TESTSPECIFICATION = new TypeReference<Map<String, TestSpecification>>() {
     };
 
+    public static final String API_VERSION = "/api/v1/info";
     public static final String API_CONNECTION_CHECK = "/api/internal/data";
     public static final String API_TESTSPECIFICATIONS_EXTENDED = "/api/internal/testspecifications/extended";
     public static final String API_IMPORT = "/api/internal/import";
@@ -159,8 +161,36 @@ public class XLTestServerImpl implements XLTestServer {
     }
 
     @Override
-    public Object getVersion() {
-        return serverUrl;
+    public ServerInfo getServerInfo() {
+        try {
+            Request request = new Request.Builder()
+                    .url(createSensibleURL(API_VERSION, serverUrl))
+                    .header("User-Agent", getUserAgent())
+                    .header("Accept", APPLICATION_JSON_UTF_8)
+                    .header("Authorization", createCredentials())
+                    .get()
+                    .build();
+
+            Response response = client.newCall(request).execute();
+            ObjectMapper mapper = createMapper();
+            switch (response.code()) {
+                case 200:
+                    ServerInfo info = mapper.readValue(response.body().byteStream(), ServerInfo.class);
+                    return info;
+                case 401:
+                    throw new AuthenticationException(String.format("User '%s' and the supplied password are unable to log in", credentials.getUsername()));
+                case 402:
+                    throw new PaymentRequiredException("The XL TestView server does not have a valid license");
+                default:
+                    throw new IllegalStateException("Unknown error. Status code: " + response.code() + ". Response message: " + response.toString());
+            }
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException(e);
+        } catch (IOException e) {
+            e.printStackTrace();
+            LOG.warn("I/O error requesting server version {} {}\n{}", serverUrl.toString(), e.toString(), e);
+            throw new RuntimeException("I/O error determining server info of " + serverUrl.toString() + " " + e.toString(), e);
+        }
     }
 
     @Override

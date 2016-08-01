@@ -41,11 +41,13 @@ import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.common.StandardUsernameListBoxModel;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.SchemeRequirement;
+import com.github.zafarkhaja.semver.Version;
 import com.google.common.base.Objects;
 import com.google.common.base.Strings;
 
 import com.xebialabs.xlt.ci.server.XLTestServer;
 import com.xebialabs.xlt.ci.server.XLTestServerFactory;
+import com.xebialabs.xlt.ci.server.domain.ServerInfo;
 
 import hudson.Extension;
 import hudson.FilePath;
@@ -66,7 +68,7 @@ import static hudson.util.FormValidation.error;
 import static hudson.util.FormValidation.ok;
 
 // TODO: should use Recorder if we want to fail the build based upon a Qualification see ArtifactArchiver
-public class XLTestView extends Notifier implements Serializable{
+public class XLTestView extends Notifier implements Serializable {
 
     private final static Logger LOG = LoggerFactory.getLogger(XLTestView.class);
 
@@ -101,7 +103,7 @@ public class XLTestView extends Notifier implements Serializable{
         FilePath workspace = build.getWorkspace();
 
         // TODO: metadata.put("buildEnvironment", build.getEnvironment(listener));
-        // TODO: metadata.put("ciServerVersion", Jenkins.getVersion().toString());
+        // TODO: metadata.put("ciServerVersion", Jenkins.getServerInfo().toString());
 
         logger.printf("[XL TestView] Uploading test run data to '%s'%n", getDescriptor().getServerUrl());
 
@@ -115,12 +117,15 @@ public class XLTestView extends Notifier implements Serializable{
         String buildUrl = rootUrl + build.getUrl();
         String buildResult = translateResult(result);
         String buildNumber = Integer.toString(build.getNumber());
+        // build duration is an approximation like this, since we're running in the build
+        long buildDuration = System.currentTimeMillis() - build.getStartTimeInMillis();
 
         for (TestSpecificationDescribable ts : testSpecifications) {
             Map<String, Object> metadata = new HashMap<String, Object>();
             metadata.put("source", "jenkins");
             metadata.put("serverUrl", rootUrl);
             metadata.put("buildResult", buildResult);
+            metadata.put("buildDuration", buildDuration);
             metadata.put("buildNumber", buildNumber);
             metadata.put("jobName", build.getProject().getFullName());
             metadata.put("jobUrl", jobUrl);
@@ -170,8 +175,18 @@ public class XLTestView extends Notifier implements Serializable{
             // TODO: title would be nicer..
             logger.printf("[XL TestView] Uploading test run for test specification with id '%s'%n", ts.getTestSpecificationId());
             logger.printf("[XL TestView] Jenkins data:%n%s%n", metadata.toString());
+            XLTestServer server = getXLTestServer();
 
-            getXLTestServer().uploadTestRun(ts.getTestSpecificationId(), workspace, ts.getIncludes(), ts.getExcludes(), metadata, logger);
+            // TODO: Ideally it would be nicer to switch to the public API for 1.4.x versions requires some refactoring to keep things clean
+            Version version = getServerVersion(server);
+            logger.printf("[XL TestView] Remote server version: %s%n", version.toString());
+
+            if (version.compareTo(Version.forIntegers(1, 4, 3)) <= 0) {
+                logger.printf("[XL TestView] Removing metadata fields not supported for this version%n");
+                metadata.remove("buildDuration");
+            }
+
+            server.uploadTestRun(ts.getTestSpecificationId(), workspace, ts.getIncludes(), ts.getExcludes(), metadata, logger);
         } catch (IOException e) {
             // this probably means the build was aborted in some way...
             logger.printf("[XL TestView] Error uploading: %s%n", e.getMessage());
@@ -181,6 +196,11 @@ public class XLTestView extends Notifier implements Serializable{
             logger.printf("[XL TestView] Upload interrupted: %s%n", e.getMessage());
             throw e;
         }
+    }
+
+    private Version getServerVersion(XLTestServer server) {
+        ServerInfo info = server.getServerInfo();
+        return Version.valueOf(info.getVersion());
     }
 
     @Override
