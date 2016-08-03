@@ -117,6 +117,7 @@ public class XLTestView extends Notifier implements Serializable {
         String buildUrl = rootUrl + build.getUrl();
         String buildResult = translateResult(result);
         String buildNumber = Integer.toString(build.getNumber());
+        // build duration is an approximation like this, since we're running in the build
         long buildDuration = System.currentTimeMillis() - build.getStartTimeInMillis();
 
         for (TestSpecificationDescribable ts : testSpecifications) {
@@ -176,12 +177,12 @@ public class XLTestView extends Notifier implements Serializable {
             logger.printf("[XL TestView] Jenkins data:%n%s%n", metadata.toString());
             XLTestServer server = getXLTestServer();
 
-            // TODO: Ideally it would be nicer to switch to the public API for 1.4.x versions
+            // TODO: Ideally it would be nicer to switch to the public API for 1.4.x versions requires some refactoring to keep things clean
             Version version = getServerVersion(server);
             logger.printf("[XL TestView] Remote server version: %s%n", version.toString());
 
             if (version.compareTo(Version.forIntegers(1, 4, 3)) <= 0) {
-                logger.printf("[XL TestView] Removing buildDuration%n");
+                logger.printf("[XL TestView] Removing metadata fields not supported for this version%n");
                 metadata.remove("buildDuration");
             }
 
